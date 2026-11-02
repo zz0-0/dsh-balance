@@ -1,5 +1,7 @@
 # dsh-balance
 
+**English** | [简体中文](README.zh.md)
+
 A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) web
 plugin that shows your **real DeepSeek account balance** and the **current
 peak/off-peak pricing window** in a window-anchored card, and estimates the
