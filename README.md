@@ -7,7 +7,8 @@ A DeepSeek Harness plugin for:
 - estimated cost on every conversation row
 - estimated total cost on every project/workspace row
 - estimated cost for the current conversation in the composer status line
-- optional browser notification when the peak/off-peak window switches
+- optional automatic browser notification when the peak/off-peak window switches
+  (only if notification permission was already granted for the dsh site)
 
 ![screenshot](./screenshot.png)
 
@@ -97,16 +98,25 @@ larger one. A USD-only account uses the USD pricing table and `$` badges.
 
 - **Main-page card** (right of the composer, bottom-aligned with the text box,
   on the scrollbar side): balance, current window (`高峰`/`谷价`), remaining
-  time, next switch time with the local zone abbreviation, and a bell button
-  to enable browser notifications. Click the card to refresh. It follows the
-  composer on the home screen and inside a conversation.
+  time, next switch time with the local zone abbreviation, plus a refresh
+  button and a chevron. If both CNY and USD balances are positive, both are
+  shown stacked.
+- **Click to expand**: clicking the card opens an inline detail section in the
+  same card (not a hover tooltip and not a dialog) with per-currency
+  topped-up/granted breakdown, Beijing/local time, peak hours, next switch,
+  price-table source, and the ledger path. The card keeps the same 172 px width
+  and the same bottom-right anchor; it only grows upward. Click again to
+  collapse. The `⟳` button refreshes. There is no bell/notification button:
+  clicking the card never sends a notification.
 - **Conversation row**: `≈¥…` estimate from the ledger.
 - **Workspace row**: sum of its conversations.
 - **Composer status line**: the same per-conversation estimate, next to the
   built-in turns/tokens pills.
-- **Notifications**: click the bell once and allow notifications. The browser
-  notifies on peak/off-peak switches while the dsh tab is open. A fully closed
-  browser cannot receive these notifications.
+- **Notifications**: there is no in-app notification button. If notification
+  permission is already granted for the dsh site (browser site settings), the
+  browser notifies on peak/off-peak switches while the dsh tab is open. A fully
+  closed browser cannot receive these notifications. Clicking the card only
+  expands/collapses the detail section and never sends a test notification.
 - The sidebar footer (including the original “更多 / More” button) is not
   modified.
 - Card and notification language follow the dsh UI language (`<html lang>`):

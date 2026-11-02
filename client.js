@@ -20,6 +20,7 @@
     lastObservedPeak: null,
     lastNotifiedSwitch: null,
     notifyTimer: null,
+    expanded: false,
   }
 
   function isZh() {
@@ -37,18 +38,26 @@
   var css = document.createElement('style')
   css.textContent = [
     '.dsh-balance-popover{position:fixed;z-index:2147483000;display:flex;flex-direction:column;gap:3px;min-width:252px;max-width:340px;padding:10px 12px;border-radius:12px;font:500 11px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;color:CanvasText;background:color-mix(in srgb,Canvas 95%,transparent);border:1px solid color-mix(in srgb,CanvasText 16%,transparent);box-shadow:0 10px 34px rgba(0,0,0,.2);user-select:none;backdrop-filter:blur(10px)}',
-    '.dsh-balance-popover .dsh-balance-head{display:flex;align-items:center;gap:6px}',
-    '.dsh-balance-popover .dsh-balance-label{font-size:10px;opacity:.58}',
-    '.dsh-balance-popover .dsh-balance-amount{font-size:13px;font-weight:650}',
-    '.dsh-balance-popover .dsh-balance-bell{margin-left:auto;border:0;background:transparent;color:inherit;opacity:.55;font-size:12px;line-height:1;padding:2px;cursor:pointer}',
-    '.dsh-balance-popover .dsh-balance-bell:hover{opacity:1}',
+    '.dsh-balance-popover .dsh-balance-head{display:flex;align-items:flex-start;gap:6px}',
+    '.dsh-balance-popover .dsh-balance-label{padding-top:3px;font-size:10px;opacity:.58}',
+    '.dsh-balance-popover .dsh-balance-amount{display:flex;flex-direction:column;gap:0;font-size:13px;font-weight:650;line-height:1.35}',
+    '.dsh-balance-popover .dsh-balance-amount-line{white-space:nowrap}',
+    '.dsh-balance-popover .dsh-balance-chevron{margin-left:2px;border:0;background:transparent;color:inherit;opacity:.45;font-size:10px;line-height:1;padding:1px;cursor:pointer}',
+    '.dsh-balance-popover .dsh-balance-refresh{margin-left:auto;border:0;background:transparent;color:inherit;opacity:.45;font-size:12px;line-height:1;padding:2px;cursor:pointer}',
+    '.dsh-balance-popover .dsh-balance-refresh:hover,.dsh-balance-popover .dsh-balance-chevron:hover{opacity:1}',
     '.dsh-balance-popover .dsh-balance-line{display:flex;align-items:center;gap:6px;font-size:11px}',
     '.dsh-balance-popover .dsh-balance-sub{display:block;font-size:10px;opacity:.62;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.dsh-balance-popover .dsh-balance-hours,.dsh-balance-popover .dsh-balance-meta,.dsh-balance-popover .dsh-balance-ledger{white-space:normal;overflow:visible}',
     '.dsh-balance-popover .dsh-balance-window{font-weight:600}',
     '.dsh-balance-popover .dsh-balance-remain{opacity:.72}',
-    '.dsh-balance-card{box-sizing:border-box;width:170px;min-width:0;max-width:170px;padding:8px 9px;font-size:10.5px}',
+    '.dsh-balance-card{box-sizing:border-box;width:172px;min-width:0;max-width:172px;padding:8px 9px;font-size:10.5px;transition:width .15s ease;max-height:calc(100vh - 180px);overflow:auto}',
     '.dsh-balance-card .dsh-balance-sub{font-size:9.5px}',
+    '.dsh-balance-card.expanded{width:172px;max-width:172px}',
+    '.dsh-balance-details{display:block;margin-top:0;padding-top:0;border-top:0 solid color-mix(in srgb,CanvasText 12%,transparent);font-size:9px;line-height:1.45;white-space:normal;opacity:0;max-height:0;overflow:hidden;pointer-events:none;transition:max-height .2s ease,opacity .2s ease,margin-top .2s ease,padding-top .2s ease}',
+    '.dsh-balance-card.expanded .dsh-balance-details{margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,CanvasText 12%,transparent);opacity:.82;max-height:240px;overflow-y:auto;pointer-events:auto}',
+    '.dsh-balance-detail-row{margin-top:2px;overflow-wrap:anywhere}',
+    '.dsh-balance-detail-row b{font-weight:600;opacity:.7;margin-right:4px}',
+    '.dsh-balance-detail-balances{margin-top:0}',
+    '.dsh-balance-detail-balance{margin-top:1px}',
     '.dsh-balance-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#3fb950;flex:0 0 auto;vertical-align:middle}',
     '.dsh-balance-dot.peak{background:#e6a23c}',
     '.dsh-balance-badge{flex:0 0 auto;margin-left:6px;margin-right:2px;padding:1px 6px;border-radius:999px;font:500 10.5px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;color:color-mix(in srgb,CanvasText 62%,transparent);background:color-mix(in srgb,CanvasText 7%,transparent);pointer-events:none;white-space:nowrap;opacity:.9}',
@@ -158,6 +167,7 @@
         ok: false,
         text: t('余额?', 'Balance?'),
         parts: [],
+        balances: [],
         error: (data && data.balance && data.balance.error) || t('余额未加载', 'Balance not loaded'),
       }
     }
@@ -179,6 +189,7 @@
           money(b.total, b.currency) + ' (topped up ' + money(b.toppedUp, b.currency) + ' + granted ' + money(b.granted, b.currency) + ')',
         )
       }),
+      balances: visible,
       error: '',
     }
   }
@@ -208,32 +219,20 @@
     }
   }
 
-  function detailTitle(balance, peak) {
-    var title = t('余额：', 'Balance: ') + (balance.parts.length ? balance.parts.join(' / ') : balance.error)
-    if (peak) {
-      title += t('\n时段：', '\nWindow: ') + peak.windowLabel +
-        t('（北京时间 ', ' (Beijing ') + peak.beijingNow + ', ' + peak.zone + ' ' + peak.localNow + ')' +
-        (peak.hoursText ? t('\n高峰时段：', '\nPeak hours: ') + peak.hoursText : '') +
-        t('\n下次：', '\nNext: ') + (peak.nextAt ? peak.localNext + ' ' + peak.nextLabel : t('未知', 'unknown')) +
-        (peak.nextAt ? ' (' + peak.zone + (zoneName(peak.nextAt, peak.zone) ? ' ' + zoneName(peak.nextAt, peak.zone) : '') + t('；北京 ', '; Beijing ') + peak.beijingNext + ')' : '') +
-        t('\n剩余：', '\nRemaining: ') + formatRemaining(peak.remainMs) +
-        t('\n价格表：', '\nPrice table: ') + (state.data.pricing && state.data.pricing.source === 'official' ? t('官方页面', 'official page') : t('缓存/默认', 'cache/default')) +
-        (state.data.pricing && state.data.pricing.fetchedAt ? t('，', ' ') + new Date(state.data.pricing.fetchedAt).toLocaleString(isZh() ? 'zh-CN' : 'en-GB') + t(' 更新', ' updated') : '') +
-        t('\n账本：', '\nLedger: ') + '~/.dsh/.dsh-balance-costs.json'
-    }
-    return title
-  }
-
   function ensureOverviewPill() {
     if (overviewPill && overviewPill.isConnected) return overviewPill
     var card = document.createElement('div')
     card.className = 'dsh-balance-popover dsh-balance-card'
     card.setAttribute('data-dsh-balance-overview', '1')
+    card.setAttribute('role', 'button')
+    card.setAttribute('tabindex', '0')
+    card.setAttribute('aria-expanded', 'false')
     card.innerHTML = [
       '<div class="dsh-balance-head">',
       '  <span class="dsh-balance-label">' + t('余额', 'Balance') + '</span>',
-      '  <span class="dsh-balance-amount">—</span>',
-      '  <button class="dsh-balance-bell" type="button" title="' + t('开启时段切换通知', 'Enable price-window notifications') + '">🔔</button>',
+      '  <span class="dsh-balance-amount"></span>',
+      '  <span class="dsh-balance-chevron" aria-hidden="true">▾</span>',
+      '  <button class="dsh-balance-refresh" type="button" title="' + t('刷新', 'Refresh') + '">⟳</button>',
       '</div>',
       '<div class="dsh-balance-line">',
       '  <span class="dsh-balance-dot"></span>',
@@ -241,31 +240,38 @@
       '  <span class="dsh-balance-remain"></span>',
       '</div>',
       '<div class="dsh-balance-sub dsh-balance-next"></div>',
+      '<div class="dsh-balance-details">',
+      '  <div class="dsh-balance-detail-balances"></div>',
+      '  <div class="dsh-balance-detail-row dsh-balance-detail-window"></div>',
+      '  <div class="dsh-balance-detail-row dsh-balance-detail-hours"></div>',
+      '  <div class="dsh-balance-detail-row dsh-balance-detail-next"></div>',
+      '  <div class="dsh-balance-detail-row dsh-balance-detail-price"></div>',
+      '  <div class="dsh-balance-detail-row dsh-balance-detail-ledger"></div>',
+      '</div>',
     ].join('')
-    card.addEventListener('click', function () { fetchData(true) })
-    card.querySelector('.dsh-balance-bell').addEventListener('click', function (event) {
+    function toggle(event) {
+      if (event && event.target && event.target.closest && event.target.closest('button')) return
+      state.expanded = !state.expanded
+      card.classList.toggle('expanded', state.expanded)
+      card.setAttribute('aria-expanded', state.expanded ? 'true' : 'false')
+      var chevron = card.querySelector('.dsh-balance-chevron')
+      if (chevron) chevron.textContent = state.expanded ? '▴' : '▾'
+      positionOverview()
+    }
+    card.addEventListener('click', toggle)
+    card.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        toggle(event)
+      }
+    })
+    card.querySelector('.dsh-balance-refresh').addEventListener('click', function (event) {
       event.stopPropagation()
-      requestNotifications()
+      fetchData(true)
     })
     document.body.appendChild(card)
     overviewPill = card
     return card
-  }
-
-  function updateBell() {
-    var bell = overviewPill && overviewPill.querySelector('.dsh-balance-bell')
-    if (!bell) return
-    if (!('Notification' in window)) {
-      bell.style.display = 'none'
-      return
-    }
-    var permission = Notification.permission
-    setText(bell, permission === 'granted' ? '🔔' : permission === 'denied' ? '🔕' : '🔔')
-    bell.title = permission === 'granted'
-      ? t('时段切换通知已开启', 'Price-window notifications are on')
-      : permission === 'denied'
-        ? t('通知已被浏览器拒绝', 'Notifications are blocked by the browser')
-        : t('开启时段切换通知', 'Enable price-window notifications')
   }
 
   function positionOverview() {
@@ -282,16 +288,18 @@
       card.style.bottom = '16px'
       return
     }
+    var width = 172
     var space = window.innerWidth - rect.right - 12
-    if (space >= 160) {
-      // Keep the card on the scrollbar side, not glued to the composer.
-      card.style.width = '160px'
+    if (space >= width) {
+      // Always anchored at the same bottom-right spot. Expanding only grows
+      // the card upward; it never jumps above the composer or changes width.
+      card.style.width = width + 'px'
       card.style.left = 'auto'
       card.style.right = '12px'
       card.style.bottom = Math.max(8, window.innerHeight - rect.bottom) + 'px'
     } else {
-      card.style.width = '160px'
-      card.style.left = Math.max(8, rect.right - 160) + 'px'
+      card.style.width = width + 'px'
+      card.style.left = Math.max(8, rect.right - width) + 'px'
       card.style.right = 'auto'
       card.style.bottom = Math.max(8, window.innerHeight - rect.top + 8) + 'px'
     }
@@ -301,9 +309,26 @@
     var el = ensureOverviewPill()
     var balance = balanceInfo()
     var peak = peakInfoClient()
-    updateBell()
     setText(el.querySelector('.dsh-balance-label'), t('余额', 'Balance'))
-    setText(el.querySelector('.dsh-balance-amount'), balance.text)
+
+    var amountEl = el.querySelector('.dsh-balance-amount')
+    if (amountEl) {
+      amountEl.textContent = ''
+      if (balance.ok && balance.balances.length) {
+        for (const b of balance.balances) {
+          var line = document.createElement('span')
+          line.className = 'dsh-balance-amount-line'
+          line.textContent = money(b.total, b.currency)
+          amountEl.appendChild(line)
+        }
+      } else {
+        var fallback = document.createElement('span')
+        fallback.className = 'dsh-balance-amount-line'
+        fallback.textContent = balance.text
+        amountEl.appendChild(fallback)
+      }
+    }
+
     var dot = el.querySelector('.dsh-balance-dot')
     var windowEl = el.querySelector('.dsh-balance-window')
     var remain = el.querySelector('.dsh-balance-remain')
@@ -321,9 +346,59 @@
       setText(remain, '')
       setText(next, state.error || '')
     }
-    var title = detailTitle(balance, peak)
-    if (el.title !== title) el.title = title
-    if (el.getAttribute('aria-label') !== title) el.setAttribute('aria-label', title)
+
+    // Expanded details are part of the card; no hover-only tooltip and no
+    // modal dialog. Clicking the card toggles this section.
+    var balancesEl = el.querySelector('.dsh-balance-detail-balances')
+    if (balancesEl) {
+      balancesEl.textContent = ''
+      if (balance.ok && balance.balances.length) {
+        for (const b of balance.balances) {
+          var row = document.createElement('div')
+          row.className = 'dsh-balance-detail-balance'
+          row.textContent = t(
+            money(b.total, b.currency) + '  充值 ' + money(b.toppedUp, b.currency) + ' + 赠金 ' + money(b.granted, b.currency),
+            money(b.total, b.currency) + '  topped up ' + money(b.toppedUp, b.currency) + ' + granted ' + money(b.granted, b.currency),
+          )
+          balancesEl.appendChild(row)
+        }
+      } else {
+        balancesEl.textContent = balance.error
+      }
+    }
+    if (peak) {
+      setText(el.querySelector('.dsh-balance-detail-window'),
+        t('时段：', 'Window: ') + peak.windowLabel + ' · ' + t('北京 ', 'Beijing ') + peak.beijingNow +
+        ' / ' + t('本地 ', 'local ') + peak.localNow)
+      setText(el.querySelector('.dsh-balance-detail-hours'),
+        peak.hoursText ? t('高峰：', 'Peak: ') + peak.hoursText : '')
+      setText(el.querySelector('.dsh-balance-detail-next'),
+        t('下次：', 'Next: ') + (peak.nextAt ? peak.localNext + ' ' + peak.nextLabel +
+          ' · ' + (zoneName(peak.nextAt, peak.zone) || peak.zone) + t('（北京 ', ' (Beijing ') + peak.beijingNext + '）' : t('未知', 'unknown')))
+      setText(el.querySelector('.dsh-balance-detail-price'),
+        t('价格：', 'Price: ') +
+          (state.data.pricing && state.data.pricing.source === 'official' ? t('官方', 'official') : t('缓存/默认', 'cache/default')) +
+          (state.data.pricing && state.data.pricing.fetchedAt
+            ? t(' · ', ' · ') + new Date(state.data.pricing.fetchedAt).toLocaleString(isZh() ? 'zh-CN' : 'en-GB') + t(' 更新', ' updated')
+            : ''))
+      setText(el.querySelector('.dsh-balance-detail-ledger'), t('账本：', 'Ledger: ') + '~/.dsh/.dsh-balance-costs.json')
+    } else {
+      setText(el.querySelector('.dsh-balance-detail-window'), state.error || '')
+      setText(el.querySelector('.dsh-balance-detail-hours'), '')
+      setText(el.querySelector('.dsh-balance-detail-next'), '')
+      setText(el.querySelector('.dsh-balance-detail-price'), '')
+      setText(el.querySelector('.dsh-balance-detail-ledger'), '')
+    }
+
+    var hint = state.expanded ? t('点击收起', 'Click to collapse') : t('点击展开详情', 'Click for details')
+    if (el.title !== hint) el.title = hint
+    if (el.getAttribute('aria-label') !== hint) el.setAttribute('aria-label', hint)
+    el.classList.toggle('expanded', state.expanded)
+    el.setAttribute('aria-expanded', state.expanded ? 'true' : 'false')
+    var details = el.querySelector('.dsh-balance-details')
+    if (details) details.setAttribute('aria-hidden', state.expanded ? 'false' : 'true')
+    var chevron = el.querySelector('.dsh-balance-chevron')
+    if (chevron) chevron.textContent = state.expanded ? '▴' : '▾'
     positionOverview()
   }
 
@@ -362,26 +437,6 @@
         tag: 'dsh-balance-peak',
       })
     } catch (err) {}
-  }
-
-  function requestNotifications() {
-    if (!('Notification' in window)) return
-    if (Notification.permission === 'granted') {
-      notifySwitch(!!(state.data && state.data.peak && state.data.peak.isPeak))
-      return
-    }
-    if (Notification.permission === 'denied') return
-    Notification.requestPermission().then(function (permission) {
-      updateBell()
-      if (permission === 'granted') {
-        try {
-          new Notification(t('DeepSeek 时段通知已开启', 'DeepSeek price-window notifications enabled'), {
-            body: t('高峰/谷价切换时会在这里提醒你。', 'You will be notified when peak/off-peak pricing switches.'),
-            tag: 'dsh-balance-enabled',
-          })
-        } catch (err) {}
-      }
-    })
   }
 
   var badges = new WeakMap()
