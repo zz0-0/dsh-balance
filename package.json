@@ -4,7 +4,40 @@
   "private": true,
   "type": "module",
   "main": "lib/index.js",
-  "description": "DSH balance, peak/off-peak pricing, and per-session/project cost badges",
+  "description": "DeepSeek account balance, peak/off-peak pricing window, and per-conversation/workspace cost estimates for the DeepSeek Harness web UI",
+  "license": "MIT",
+  "author": "zz0-0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zz0-0/dsh-balance.git"
+  },
+  "homepage": "https://github.com/zz0-0/dsh-balance#readme",
+  "bugs": {
+    "url": "https://github.com/zz0-0/dsh-balance/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "balance",
+    "cost",
+    "pricing",
+    "peak",
+    "余额",
+    "费用"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.1-0 <0.2.2-0"
+  },
+  "files": [
+    "lib",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "screenshot.png"
+  ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
