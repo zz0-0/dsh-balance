@@ -1,0 +1,13 @@
+{
+  "name": "dsh-balance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "description": "DSH balance, peak/off-peak pricing, and per-session/project cost badges",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
