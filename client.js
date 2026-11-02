@@ -2,11 +2,12 @@
   if (window.__dshBalanceInstalled) return
   window.__dshBalanceInstalled = true
 
-  // Remove UI left by earlier builds (the sidebar-footer experiment and the
-  // old floating card) so a reload restores the original sidebar styling.
+  // Remove UI left by earlier builds (the sidebar-footer experiment, the old
+  // floating card, and the previous inline detail section) so a reload
+  // restores the original sidebar styling.
   try {
     document.querySelectorAll(
-      '#dsh-balance-floating, .dsh-balance-popover:not(.dsh-balance-card), [data-slot="sidebar"] [data-dsh-balance-overview]',
+      '#dsh-balance-floating, .dsh-balance-popover:not(.dsh-balance-card), .dsh-balance-panel, [data-slot="sidebar"] [data-dsh-balance-overview]',
     ).forEach(function (el) { el.remove() })
   } catch (err) {}
 
@@ -20,7 +21,6 @@
     lastObservedPeak: null,
     lastNotifiedSwitch: null,
     notifyTimer: null,
-    expanded: false,
   }
 
   function isZh() {
@@ -35,34 +35,48 @@
     return isZh() ? zh : en
   }
 
+  // The card and its panel use the app's own menu-surface tokens, so they
+  // follow the theme, radius, elevation and type settings like a native
+  // popover instead of looking like a separate widget. Every token has a
+  // Canvas fallback so an older/renamed token cannot make the UI disappear.
   var css = document.createElement('style')
   css.textContent = [
-    '.dsh-balance-popover{position:fixed;z-index:2147483000;display:flex;flex-direction:column;gap:3px;min-width:252px;max-width:340px;padding:10px 12px;border-radius:12px;font:500 11px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;color:CanvasText;background:color-mix(in srgb,Canvas 95%,transparent);border:1px solid color-mix(in srgb,CanvasText 16%,transparent);box-shadow:0 10px 34px rgba(0,0,0,.2);user-select:none;backdrop-filter:blur(10px)}',
-    '.dsh-balance-popover .dsh-balance-head{display:flex;align-items:flex-start;gap:6px}',
-    '.dsh-balance-popover .dsh-balance-label{padding-top:3px;font-size:10px;opacity:.58}',
-    '.dsh-balance-popover .dsh-balance-amount{display:flex;flex-direction:column;gap:0;font-size:13px;font-weight:650;line-height:1.35}',
+    '.dsh-balance-popover{position:fixed;z-index:950;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;width:172px;padding:8px 10px;border-radius:var(--dsw-radius-lg,12px);font-family:var(--dsw-font-family,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);font-size:12px;line-height:18px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,CanvasText);background:var(--dsw-specific-menu,color-mix(in srgb,Canvas 96%,transparent));--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,color-mix(in srgb,CanvasText 14%,transparent));box-shadow:var(--dsw-elevation-prominent,0 10px 34px rgba(0,0,0,.18));backdrop-filter:var(--dsw-menu-backdrop-filter,blur(10px));user-select:none;cursor:pointer;transition:background .12s ease}',
+    '.dsh-balance-popover:hover{--dsw-elevation-stroke-color:var(--dsw-alias-border-l2,color-mix(in srgb,CanvasText 20%,transparent))}',
+    '.dsh-balance-popover .dsh-balance-head{display:flex;align-items:flex-start;gap:6px;min-width:0}',
+    '.dsh-balance-popover .dsh-balance-label{color:var(--dsw-alias-label-tertiary,CanvasText);font-size:12px;line-height:18px}',
+    '.dsh-balance-popover .dsh-balance-amount{display:flex;flex-direction:column;min-width:0;color:var(--dsw-alias-label-primary,CanvasText);font-size:12px;line-height:18px;font-weight:500}',
     '.dsh-balance-popover .dsh-balance-amount-line{white-space:nowrap}',
-    '.dsh-balance-popover .dsh-balance-chevron{margin-left:2px;border:0;background:transparent;color:inherit;opacity:.45;font-size:10px;line-height:1;padding:1px;cursor:pointer}',
-    '.dsh-balance-popover .dsh-balance-refresh{margin-left:auto;border:0;background:transparent;color:inherit;opacity:.45;font-size:12px;line-height:1;padding:2px;cursor:pointer}',
-    '.dsh-balance-popover .dsh-balance-refresh:hover,.dsh-balance-popover .dsh-balance-chevron:hover{opacity:1}',
-    '.dsh-balance-popover .dsh-balance-line{display:flex;align-items:center;gap:6px;font-size:11px}',
-    '.dsh-balance-popover .dsh-balance-sub{display:block;font-size:10px;opacity:.62;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.dsh-balance-popover .dsh-balance-window{font-weight:600}',
-    '.dsh-balance-popover .dsh-balance-remain{opacity:.72}',
-    '.dsh-balance-card{box-sizing:border-box;width:172px;min-width:0;max-width:172px;padding:8px 9px;font-size:10.5px;transition:width .15s ease;max-height:calc(100vh - 180px);overflow:auto}',
-    '.dsh-balance-card .dsh-balance-sub{font-size:9.5px}',
-    '.dsh-balance-card.expanded{width:172px;max-width:172px}',
-    '.dsh-balance-details{display:block;margin-top:0;padding-top:0;border-top:0 solid color-mix(in srgb,CanvasText 12%,transparent);font-size:9px;line-height:1.45;white-space:normal;opacity:0;max-height:0;overflow:hidden;pointer-events:none;transition:max-height .2s ease,opacity .2s ease,margin-top .2s ease,padding-top .2s ease}',
-    '.dsh-balance-card.expanded .dsh-balance-details{margin-top:6px;padding-top:6px;border-top:1px solid color-mix(in srgb,CanvasText 12%,transparent);opacity:.82;max-height:240px;overflow-y:auto;pointer-events:auto}',
-    '.dsh-balance-detail-row{margin-top:2px;overflow-wrap:anywhere}',
-    '.dsh-balance-detail-row b{font-weight:600;opacity:.7;margin-right:4px}',
-    '.dsh-balance-detail-balances{margin-top:0}',
-    '.dsh-balance-detail-balance{margin-top:1px}',
-    '.dsh-balance-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#3fb950;flex:0 0 auto;vertical-align:middle}',
-    '.dsh-balance-dot.peak{background:#e6a23c}',
-    '.dsh-balance-badge{flex:0 0 auto;margin-left:6px;margin-right:2px;padding:1px 6px;border-radius:999px;font:500 10.5px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;color:color-mix(in srgb,CanvasText 62%,transparent);background:color-mix(in srgb,CanvasText 7%,transparent);pointer-events:none;white-space:nowrap;opacity:.9}',
-    '.dsh-balance-badge[data-zero="1"]{opacity:.42}',
-    '[data-composer-stat="cost"] ._6yHc5a_label{font-variant-numeric:tabular-nums}',
+    '.dsh-balance-popover .dsh-balance-chevron{margin-left:auto;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:10px;line-height:18px;opacity:.7;transition:transform .15s ease}',
+    '.dsh-balance-card[aria-expanded="true"] .dsh-balance-chevron{transform:rotate(180deg)}',
+    '.dsh-balance-popover .dsh-balance-line{display:flex;align-items:center;gap:5px;min-width:0}',
+    '.dsh-balance-popover .dsh-balance-dot{display:inline-block;width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:var(--dsw-alias-state-success-primary,#3fb950);vertical-align:middle}',
+    '.dsh-balance-popover .dsh-balance-dot.peak{background:var(--dsw-alias-state-warn-primary,#e6a23c)}',
+    '.dsh-balance-popover .dsh-balance-window{color:var(--dsw-alias-label-secondary,CanvasText);font-weight:500;white-space:nowrap}',
+    '.dsh-balance-popover .dsh-balance-remain{margin-left:auto;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:11px;line-height:16px;white-space:nowrap}',
+    '.dsh-balance-popover .dsh-balance-next{color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary,CanvasText));font-size:11px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.dsh-balance-panel{position:fixed;z-index:1100;box-sizing:border-box;display:flex;flex-direction:column;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:16px;border:0;border-radius:var(--dsw-radius-lg,12px);font-family:var(--dsw-font-family,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);font-size:12px;line-height:18px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,CanvasText);background:var(--dsw-specific-menu,color-mix(in srgb,Canvas 96%,transparent));--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,color-mix(in srgb,CanvasText 14%,transparent));box-shadow:var(--dsw-elevation-prominent,0 10px 34px rgba(0,0,0,.18));backdrop-filter:var(--dsw-menu-backdrop-filter,blur(10px));text-align:left;white-space:normal;user-select:text}',
+    '.dsh-balance-panel[hidden]{display:none}',
+    '.dsh-balance-panel-head{display:flex;align-items:flex-start;gap:16px}',
+    '.dsh-balance-panel-title{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--dsw-alias-label-primary,CanvasText);font-weight:500}',
+    '.dsh-balance-panel-title svg{flex:none;width:14px;height:14px}',
+    '.dsh-balance-panel-total{margin-left:auto;color:var(--dsw-alias-label-primary,CanvasText);font-weight:500;white-space:nowrap}',
+    '.dsh-balance-panel-subhead{display:flex;align-items:center;gap:5px;margin-top:2px;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:11px;line-height:16px}',
+    '.dsh-balance-panel-subhead .dsh-balance-remain{margin-left:auto}',
+    '.dsh-balance-panel-rule{margin:8px 0 10px;border-top:.5px solid var(--dsw-alias-border-l2,color-mix(in srgb,CanvasText 12%,transparent))}',
+    '.dsh-balance-panel-grid{display:grid;grid-template-columns:minmax(76px,auto) minmax(0,1fr);gap:6px 16px;margin:0;padding:0}',
+    '.dsh-balance-panel-grid dt,.dsh-balance-panel-grid dd{min-width:0;margin:0;font-size:12px;line-height:18px;font-weight:400}',
+    '.dsh-balance-panel-grid dt{color:var(--dsw-alias-label-tertiary,CanvasText);overflow-wrap:anywhere}',
+    '.dsh-balance-panel-grid dd{color:var(--dsw-alias-label-secondary,CanvasText);text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}',
+    '.dsh-balance-panel-grid dd[data-warn="true"]{color:var(--dsw-alias-state-error-primary,#d5484a)}',
+    '.dsh-balance-panel-foot{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:.5px solid var(--dsw-alias-border-l2,color-mix(in srgb,CanvasText 12%,transparent));color:var(--dsw-alias-label-tertiary,CanvasText);font-size:11px;line-height:16px}',
+    '.dsh-balance-panel-refresh{display:inline-flex;align-items:center;justify-content:center;flex:none;width:20px;height:20px;margin-left:auto;padding:0;border:0;border-radius:24px;background:transparent;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:13px;line-height:1;cursor:pointer}',
+    '.dsh-balance-panel-refresh:hover{color:var(--dsw-alias-label-secondary,CanvasText);background:var(--dsw-alias-interactive-bg-hover)}',
+    '.dsh-balance-panel-refresh[data-spin="true"]{animation:dsh-balance-spin .8s linear infinite}',
+    '@keyframes dsh-balance-spin{to{transform:rotate(360deg)}}',
+    '.dsh-balance-panel-note{margin:8px 0 0;color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary,CanvasText));font-size:11px;line-height:16px}',
+    '.dsh-balance-badge{flex:0 0 auto;margin-left:6px;margin-right:2px;padding:1px 6px;border-radius:var(--dsw-radius-sm,8px);font-family:var(--dsw-font-family,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);font-size:11px;line-height:16px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary,CanvasText);background:var(--dsw-alias-interactive-bg-hover,color-mix(in srgb,CanvasText 7%,transparent));pointer-events:none;white-space:nowrap}',
+    '.dsh-balance-badge[data-zero="1"]{opacity:.45}',
   ].join('')
   document.head.appendChild(css)
 
@@ -107,18 +121,6 @@
     return t(d + '天' + (hh ? hh + '小时' : ''), d + 'd' + (hh ? ' ' + hh + 'h' : ''))
   }
 
-  function formatRemainingShort(ms) {
-    if (!Number.isFinite(ms) || ms <= 0) return t('现在', 'now')
-    var mins = Math.ceil(ms / 60000)
-    if (mins < 60) return mins + 'm'
-    var h = Math.floor(mins / 60)
-    var m = mins % 60
-    if (h < 24) return h + 'h' + (m ? m + 'm' : '')
-    var d = Math.floor(h / 24)
-    var hh = h % 24
-    return d + 'd' + (hh ? hh + 'h' : '')
-  }
-
   function localZone() {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone || ''
@@ -159,6 +161,17 @@
   }
 
   var overviewPill = null
+  var overviewPanel = null
+  var panelOpen = false
+  var CARD_WIDTH = 172
+  var CARD_EDGE = 12
+  var CARD_GAP = 8
+  var PANEL_GAP = 8
+  var PANEL_MARGIN = 12
+
+  function walletIcon() {
+    return '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3.5" width="12" height="9.5" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2.2 6.4h11.6" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="11.2" cy="9.6" r="1" fill="currentColor"/></svg>'
+  }
 
   function balanceInfo() {
     var data = state.data
@@ -226,57 +239,130 @@
     card.setAttribute('data-dsh-balance-overview', '1')
     card.setAttribute('role', 'button')
     card.setAttribute('tabindex', '0')
+    card.setAttribute('aria-haspopup', 'dialog')
     card.setAttribute('aria-expanded', 'false')
     card.innerHTML = [
       '<div class="dsh-balance-head">',
-      '  <span class="dsh-balance-label">' + t('余额', 'Balance') + '</span>',
+      '  <span class="dsh-balance-label"></span>',
       '  <span class="dsh-balance-amount"></span>',
       '  <span class="dsh-balance-chevron" aria-hidden="true">▾</span>',
-      '  <button class="dsh-balance-refresh" type="button" title="' + t('刷新', 'Refresh') + '">⟳</button>',
       '</div>',
       '<div class="dsh-balance-line">',
       '  <span class="dsh-balance-dot"></span>',
       '  <span class="dsh-balance-window">…</span>',
       '  <span class="dsh-balance-remain"></span>',
       '</div>',
-      '<div class="dsh-balance-sub dsh-balance-next"></div>',
-      '<div class="dsh-balance-details">',
-      '  <div class="dsh-balance-detail-balances"></div>',
-      '  <div class="dsh-balance-detail-row dsh-balance-detail-window"></div>',
-      '  <div class="dsh-balance-detail-row dsh-balance-detail-hours"></div>',
-      '  <div class="dsh-balance-detail-row dsh-balance-detail-next"></div>',
-      '  <div class="dsh-balance-detail-row dsh-balance-detail-price"></div>',
-      '  <div class="dsh-balance-detail-row dsh-balance-detail-ledger"></div>',
-      '</div>',
+      '<div class="dsh-balance-next"></div>',
     ].join('')
-    function toggle(event) {
-      if (event && event.target && event.target.closest && event.target.closest('button')) return
-      state.expanded = !state.expanded
-      card.classList.toggle('expanded', state.expanded)
-      card.setAttribute('aria-expanded', state.expanded ? 'true' : 'false')
-      var chevron = card.querySelector('.dsh-balance-chevron')
-      if (chevron) chevron.textContent = state.expanded ? '▴' : '▾'
-      positionOverview()
-    }
-    card.addEventListener('click', toggle)
+    card.addEventListener('click', function () { setPanelOpen(!panelOpen) })
     card.addEventListener('keydown', function (event) {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault()
-        toggle(event)
+        setPanelOpen(!panelOpen)
       }
-    })
-    card.querySelector('.dsh-balance-refresh').addEventListener('click', function (event) {
-      event.stopPropagation()
-      fetchData(true)
     })
     document.body.appendChild(card)
     overviewPill = card
     return card
   }
 
-  var CARD_WIDTH = 172
-  var CARD_EDGE = 12
-  var CARD_GAP = 8
+  function ensureOverviewPanel() {
+    if (overviewPanel && overviewPanel.isConnected) return overviewPanel
+    var panel = document.createElement('div')
+    panel.className = 'dsh-balance-panel'
+    panel.setAttribute('data-dsh-balance-panel', '1')
+    panel.setAttribute('role', 'dialog')
+    panel.setAttribute('aria-hidden', 'true')
+    panel.hidden = true
+    panel.innerHTML = [
+      '<div class="dsh-balance-panel-head">',
+      '  <span class="dsh-balance-panel-title">' + walletIcon() + '<span class="dsh-balance-panel-title-text"></span></span>',
+      '  <span class="dsh-balance-panel-total"></span>',
+      '</div>',
+      '<div class="dsh-balance-panel-subhead">',
+      '  <span class="dsh-balance-dot"></span>',
+      '  <span class="dsh-balance-window"></span>',
+      '  <span class="dsh-balance-remain"></span>',
+      '</div>',
+      '<div class="dsh-balance-panel-rule"></div>',
+      '<dl class="dsh-balance-panel-grid dsh-balance-panel-balances"></dl>',
+      '<div class="dsh-balance-panel-rule"></div>',
+      '<dl class="dsh-balance-panel-grid dsh-balance-panel-time"></dl>',
+      '<div class="dsh-balance-panel-rule"></div>',
+      '<dl class="dsh-balance-panel-grid dsh-balance-panel-meta"></dl>',
+      '<div class="dsh-balance-panel-foot">',
+      '  <span class="dsh-balance-panel-updated"></span>',
+      '  <button class="dsh-balance-panel-refresh" type="button">⟳</button>',
+      '</div>',
+      '<p class="dsh-balance-panel-note"></p>',
+    ].join('')
+    panel.__dshRefs = {
+      title: panel.querySelector('.dsh-balance-panel-title-text'),
+      total: panel.querySelector('.dsh-balance-panel-total'),
+      dot: panel.querySelector('.dsh-balance-panel-subhead .dsh-balance-dot'),
+      window: panel.querySelector('.dsh-balance-panel-subhead .dsh-balance-window'),
+      remain: panel.querySelector('.dsh-balance-panel-subhead .dsh-balance-remain'),
+      balances: panel.querySelector('.dsh-balance-panel-balances'),
+      time: panel.querySelector('.dsh-balance-panel-time'),
+      meta: panel.querySelector('.dsh-balance-panel-meta'),
+      updated: panel.querySelector('.dsh-balance-panel-updated'),
+      note: panel.querySelector('.dsh-balance-panel-note'),
+      refresh: panel.querySelector('.dsh-balance-panel-refresh'),
+    }
+    panel.__dshRefs.refresh.addEventListener('click', function (event) {
+      event.stopPropagation()
+      fetchData(true)
+    })
+    document.body.appendChild(panel)
+    overviewPanel = panel
+    return panel
+  }
+
+  function setPanelOpen(open) {
+    var card = ensureOverviewPill()
+    var panel = ensureOverviewPanel()
+    panelOpen = open
+    card.setAttribute('aria-expanded', open ? 'true' : 'false')
+    if (!open) {
+      panel.hidden = true
+      panel.setAttribute('aria-hidden', 'true')
+      panel.style.visibility = ''
+      return
+    }
+    panel.hidden = false
+    panel.setAttribute('aria-hidden', 'false')
+    // Measure and place while invisible so the panel never flashes at 0,0.
+    panel.style.visibility = 'hidden'
+    updateOverview()
+    positionPanel()
+    panel.style.visibility = 'visible'
+  }
+
+  // The composer card and its status row (built-in stats, the token-saver
+  // strip, other plugins' readings) are separate boxes; the row may also be a
+  // `display:contents` slot whose own rect is empty. Return the real boxes so
+  // the card can stay clear of whichever one reaches the bottom-right corner.
+  function composerChromeRects() {
+    var rects = []
+    var input = document.querySelector('[data-composer-input]')
+    var composer = input ? input.closest('[data-composer-card]') : null
+    if (!composer && input) composer = input
+    if (!composer) composer = document.querySelector('[data-composer-card]')
+    if (composer) {
+      var composerRect = composer.getBoundingClientRect()
+      if (composerRect.width > 0) rects.push(composerRect)
+    }
+    var dock = document.querySelector('[data-slot="conversation.composer.dock"]')
+    if (dock) {
+      var dockRect = dock.getBoundingClientRect()
+      if (dockRect.width > 0) rects.push(dockRect)
+      for (var i = 0; i < dock.children.length; i += 1) {
+        var childRect = dock.children[i].getBoundingClientRect()
+        if (childRect.width > 0) rects.push(childRect)
+      }
+    }
+    return rects
+  }
 
   function positionOverview() {
     var card = overviewPill
@@ -284,38 +370,140 @@
     card.style.width = CARD_WIDTH + 'px'
 
     // The card is a window-level status box, not part of the composer: it
-    // always hugs the bottom-right corner of the viewport. The composer only
-    // matters when it really occupies that corner (a wide composer on a
-    // narrow window); then the card sits just above it instead of on top of
-    // it. In the hero state — no conversation yet, so the composer is
-    // vertically centered — the card stays at the bottom of the window
-    // instead of floating next to the centered input.
+    // hugs the bottom-right corner of the viewport. It only moves when the
+    // composer or its per-conversation status row actually occupies that
+    // corner — then it sits just above the whole chrome strip, so it never
+    // covers another plugin's reading. In the hero state the composer is
+    // vertically centered, so the card stays at the bottom of the window
+    // instead of following the input.
     var right = CARD_EDGE
     var bottom = CARD_EDGE
+    var cardLeft = window.innerWidth - right - CARD_WIDTH
+    var cardRight = window.innerWidth - right
+    var cardHeight = card.offsetHeight || 0
 
-    var input = document.querySelector('[data-composer-input]')
-    var composer = input ? input.closest('[data-composer-card]') : null
-    if (!composer && input) composer = input
-    if (!composer) composer = document.querySelector('[data-composer-card]')
-    var rect = composer ? composer.getBoundingClientRect() : null
-
-    if (rect && rect.width > 0) {
-      var cardLeft = window.innerWidth - right - CARD_WIDTH
-      var cardTop = window.innerHeight - bottom - (card.offsetHeight || 0)
-      var overlaps = rect.right + CARD_GAP > cardLeft &&
-        rect.left - CARD_GAP < window.innerWidth - right &&
-        rect.bottom + CARD_GAP > cardTop &&
-        rect.top - CARD_GAP < window.innerHeight - bottom
-      if (overlaps) {
-        // Lift above the composer, keeping the card right-aligned to it.
-        right = Math.max(CARD_EDGE, window.innerWidth - rect.right)
-        bottom = Math.max(CARD_EDGE, window.innerHeight - rect.top + CARD_GAP)
+    var rects = composerChromeRects()
+    for (var i = 0; i < rects.length; i += 1) {
+      var rect = rects[i]
+      var cardTop = window.innerHeight - bottom - cardHeight
+      var overlapsHorizontally = rect.right + CARD_GAP > cardLeft && rect.left - CARD_GAP < cardRight
+      var overlapsVertically = rect.bottom + CARD_GAP > cardTop && rect.top - CARD_GAP < window.innerHeight - bottom
+      if (overlapsHorizontally && overlapsVertically) {
+        bottom = Math.max(bottom, window.innerHeight - rect.top + CARD_GAP)
       }
     }
 
     card.style.left = 'auto'
     card.style.right = right + 'px'
     card.style.bottom = bottom + 'px'
+  }
+
+  function positionPanel() {
+    var card = overviewPill
+    var panel = overviewPanel
+    if (!card || !panel || panel.hidden || !panel.isConnected) return
+    var anchor = card.getBoundingClientRect()
+    var width = panel.offsetWidth
+    var height = panel.offsetHeight
+    var vw = window.innerWidth
+    var vh = window.innerHeight
+    // Right edges line up with the card, then clamp to the viewport so the
+    // panel never leaves the screen when the card was lifted off the corner.
+    var left = Math.min(
+      Math.max(PANEL_MARGIN, anchor.right - width),
+      Math.max(PANEL_MARGIN, vw - width - PANEL_MARGIN),
+    )
+    var top = anchor.top - height - PANEL_GAP
+    if (top < PANEL_MARGIN) top = Math.min(anchor.bottom + PANEL_GAP, vh - height - PANEL_MARGIN)
+    panel.style.left = Math.round(left) + 'px'
+    panel.style.top = Math.round(Math.max(PANEL_MARGIN, top)) + 'px'
+  }
+
+  function fillGrid(el, rows) {
+    if (!el) return
+    var sig = JSON.stringify(rows)
+    if (el.__dshBalanceSig === sig) return
+    el.__dshBalanceSig = sig
+    el.textContent = ''
+    for (var i = 0; i < rows.length; i += 1) {
+      var dt = document.createElement('dt')
+      dt.textContent = rows[i][0]
+      var dd = document.createElement('dd')
+      dd.textContent = rows[i][1]
+      if (rows[i][2] === 'warn') dd.setAttribute('data-warn', 'true')
+      el.appendChild(dt)
+      el.appendChild(dd)
+    }
+  }
+
+  function updatePanel(balance, peak) {
+    var panel = ensureOverviewPanel()
+    var r = panel.__dshRefs
+    setText(r.title, t('余额', 'Balance'))
+    setText(r.total, balance.ok ? balance.text : '—')
+
+    if (peak) {
+      r.dot.className = 'dsh-balance-dot' + (peak.peak.isPeak ? ' peak' : '')
+      setText(r.window, peak.windowLabel)
+      setText(r.remain, peak.nextAt ? t('剩 ', 'left ') + formatRemaining(peak.remainMs) : '')
+    } else {
+      r.dot.className = 'dsh-balance-dot'
+      setText(r.window, state.error ? t('连接失败', 'Connection failed') : '…')
+      setText(r.remain, '')
+    }
+
+    var balanceRows = []
+    if (balance.ok && balance.balances.length) {
+      var multi = balance.balances.length > 1
+      for (var i = 0; i < balance.balances.length; i += 1) {
+        var b = balance.balances[i]
+        var suffix = multi ? ' · ' + b.currency : ''
+        balanceRows.push([t('账户余额', 'Account balance') + suffix, money(b.total, b.currency)])
+        balanceRows.push([t('充值余额', 'Topped up') + suffix, money(b.toppedUp, b.currency)])
+        balanceRows.push([t('赠送余额', 'Granted') + suffix, money(b.granted, b.currency)])
+      }
+    } else {
+      balanceRows.push([t('账户余额', 'Account balance'), balance.error || t('不可用', 'Unavailable'), 'warn'])
+    }
+    fillGrid(r.balances, balanceRows)
+
+    var timeRows = []
+    if (peak) {
+      timeRows.push([t('下次切换', 'Next switch'), peak.nextAt
+        ? peak.localNext + ' ' + peak.nextLabel + ' · ' + (zoneName(peak.nextAt, peak.zone) || peak.zone)
+        : t('未知', 'Unknown')])
+      timeRows.push([t('北京切换', 'Beijing switch'), peak.nextAt ? peak.beijingNext + ' ' + peak.nextLabel : '—'])
+      timeRows.push([t('当前时间', 'Now'), t('本地 ', 'local ') + peak.localNow + ' · ' + t('北京 ', 'Beijing ') + peak.beijingNow])
+      timeRows.push([t('高峰时段', 'Peak hours'), peak.hoursText || '—'])
+    } else if (state.error) {
+      timeRows.push([t('状态', 'Status'), state.error, 'warn'])
+    }
+    fillGrid(r.time, timeRows)
+
+    var pricing = state.data && state.data.pricing
+    var sourceText = pricing
+      ? (pricing.source === 'official' ? t('官方', 'official') : t('缓存/默认', 'cache/default'))
+      : '—'
+    if (pricing && pricing.fetchedAt) sourceText += ' · ' + localTime(pricing.fetchedAt)
+    fillGrid(r.meta, [
+      [t('价格来源', 'Price source'), sourceText],
+      [t('账本', 'Ledger'), '~/.dsh/.dsh-balance-costs.json'],
+    ])
+
+    var balanceMs = state.data && state.data.balance && state.data.balance.fetchedAt
+    setText(r.updated, balanceMs
+      ? t('更新于 ', 'Updated ') + localTime(balanceMs)
+      : (state.error ? t('更新失败', 'Update failed') : t('尚未更新', 'Not updated yet')))
+    setText(r.note, t(
+      '余额来自 DeepSeek 账户接口；价格与时段每 6 小时从官方定价页刷新。',
+      'Balance from the DeepSeek account API; pricing and windows refresh from the official page every 6 hours.',
+    ))
+    var hint = t('刷新余额与时段', 'Refresh balance and window')
+    if (r.refresh.title !== hint) r.refresh.title = hint
+    if (r.refresh.getAttribute('aria-label') !== hint) r.refresh.setAttribute('aria-label', hint)
+    r.refresh.setAttribute('data-spin', state.loading ? 'true' : 'false')
+    var panelLabel = t('余额详情', 'Balance details')
+    if (panel.getAttribute('aria-label') !== panelLabel) panel.setAttribute('aria-label', panelLabel)
   }
 
   function updateOverview() {
@@ -328,10 +516,10 @@
     if (amountEl) {
       amountEl.textContent = ''
       if (balance.ok && balance.balances.length) {
-        for (const b of balance.balances) {
+        for (var i = 0; i < balance.balances.length; i += 1) {
           var line = document.createElement('span')
           line.className = 'dsh-balance-amount-line'
-          line.textContent = money(b.total, b.currency)
+          line.textContent = money(balance.balances[i].total, balance.balances[i].currency)
           amountEl.appendChild(line)
         }
       } else {
@@ -360,59 +548,14 @@
       setText(next, state.error || '')
     }
 
-    // Expanded details are part of the card; no hover-only tooltip and no
-    // modal dialog. Clicking the card toggles this section.
-    var balancesEl = el.querySelector('.dsh-balance-detail-balances')
-    if (balancesEl) {
-      balancesEl.textContent = ''
-      if (balance.ok && balance.balances.length) {
-        for (const b of balance.balances) {
-          var row = document.createElement('div')
-          row.className = 'dsh-balance-detail-balance'
-          row.textContent = t(
-            money(b.total, b.currency) + '  充值 ' + money(b.toppedUp, b.currency) + ' + 赠金 ' + money(b.granted, b.currency),
-            money(b.total, b.currency) + '  topped up ' + money(b.toppedUp, b.currency) + ' + granted ' + money(b.granted, b.currency),
-          )
-          balancesEl.appendChild(row)
-        }
-      } else {
-        balancesEl.textContent = balance.error
-      }
-    }
-    if (peak) {
-      setText(el.querySelector('.dsh-balance-detail-window'),
-        t('时段：', 'Window: ') + peak.windowLabel + ' · ' + t('北京 ', 'Beijing ') + peak.beijingNow +
-        ' / ' + t('本地 ', 'local ') + peak.localNow)
-      setText(el.querySelector('.dsh-balance-detail-hours'),
-        peak.hoursText ? t('高峰：', 'Peak: ') + peak.hoursText : '')
-      setText(el.querySelector('.dsh-balance-detail-next'),
-        t('下次：', 'Next: ') + (peak.nextAt ? peak.localNext + ' ' + peak.nextLabel +
-          ' · ' + (zoneName(peak.nextAt, peak.zone) || peak.zone) + t('（北京 ', ' (Beijing ') + peak.beijingNext + t('）', ')') : t('未知', 'unknown')))
-      setText(el.querySelector('.dsh-balance-detail-price'),
-        t('价格：', 'Price: ') +
-          (state.data.pricing && state.data.pricing.source === 'official' ? t('官方', 'official') : t('缓存/默认', 'cache/default')) +
-          (state.data.pricing && state.data.pricing.fetchedAt
-            ? t(' · ', ' · ') + new Date(state.data.pricing.fetchedAt).toLocaleString(isZh() ? 'zh-CN' : 'en-GB') + t(' 更新', ' updated')
-            : ''))
-      setText(el.querySelector('.dsh-balance-detail-ledger'), t('账本：', 'Ledger: ') + '~/.dsh/.dsh-balance-costs.json')
-    } else {
-      setText(el.querySelector('.dsh-balance-detail-window'), state.error || '')
-      setText(el.querySelector('.dsh-balance-detail-hours'), '')
-      setText(el.querySelector('.dsh-balance-detail-next'), '')
-      setText(el.querySelector('.dsh-balance-detail-price'), '')
-      setText(el.querySelector('.dsh-balance-detail-ledger'), '')
-    }
+    updatePanel(balance, peak)
 
-    var hint = state.expanded ? t('点击收起', 'Click to collapse') : t('点击展开详情', 'Click for details')
+    var hint = t('点击查看余额详情', 'Click for balance details')
     if (el.title !== hint) el.title = hint
     if (el.getAttribute('aria-label') !== hint) el.setAttribute('aria-label', hint)
-    el.classList.toggle('expanded', state.expanded)
-    el.setAttribute('aria-expanded', state.expanded ? 'true' : 'false')
-    var details = el.querySelector('.dsh-balance-details')
-    if (details) details.setAttribute('aria-hidden', state.expanded ? 'false' : 'true')
-    var chevron = el.querySelector('.dsh-balance-chevron')
-    if (chevron) chevron.textContent = state.expanded ? '▴' : '▾'
+    el.setAttribute('aria-expanded', panelOpen ? 'true' : 'false')
     positionOverview()
+    if (panelOpen) positionPanel()
   }
 
   function scheduleSwitchTimer(peak) {
@@ -483,73 +626,8 @@
     if (badge.title !== title) badge.title = title
   }
 
-  var dockState = { pill: null, sessionId: null }
-  function ensureDockPill(dock) {
-    if (dockState.pill && dockState.pill.isConnected) return dockState.pill
-    var sample = dock.querySelector('[data-composer-stat="usage"]') || dock.querySelector('[data-composer-stat]')
-    var pill = document.createElement('span')
-    pill.setAttribute('data-composer-stat', 'cost')
-    if (sample) pill.className = sample.className
-    else pill.style.cssText = 'display:inline-flex;align-items:center;margin-left:2px;opacity:.85'
-    var button = document.createElement('button')
-    button.type = 'button'
-    button.setAttribute('aria-label', t('本次对话估算成本', 'Estimated cost of this conversation'))
-    if (sample) {
-      var sampleButton = sample.querySelector('button')
-      if (sampleButton) button.className = sampleButton.className
-    } else {
-      button.style.cssText = 'display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:inherit;font:inherit;padding:0;cursor:default'
-    }
-    var label = document.createElement('span')
-    if (sample) {
-      var sampleLabel = sample.querySelector('button > span')
-      if (sampleLabel) label.className = sampleLabel.className
-    }
-    label.textContent = '≈—'
-    button.appendChild(label)
-    pill.appendChild(button)
-    dock.appendChild(pill)
-    dockState.pill = pill
-    return pill
-  }
-
-  function removeDockPill(dock) {
-    var pill = dock && dock.querySelector('[data-composer-stat="cost"]')
-    if (pill) pill.remove()
-    dockState.pill = null
-    dockState.sessionId = null
-  }
-
-  function paintDock() {
-    var dock = document.querySelector('[data-slot="conversation.composer.dock"]')
-    if (!dock) return
-    var selected = document.querySelector('[data-row-key^="session:"][aria-selected="true"]')
-    if (!selected || !state.data) {
-      removeDockPill(dock)
-      return
-    }
-    var sid = (selected.getAttribute('data-row-key') || '').slice('session:'.length)
-    var entry = state.data.sessions && state.data.sessions[sid]
-    if (!entry) {
-      removeDockPill(dock)
-      return
-    }
-    var pill = ensureDockPill(dock)
-    var currency = state.data.costCurrency || state.data.balance && state.data.balance.currency || 'CNY'
-    var text = estimated(entry.cost, currency)
-    var label = pill.querySelector('button > span') || pill.querySelector('span')
-    if (label && label.textContent !== text) label.textContent = text
-    var title = (entry.title || sid) + ' · ' + money(entry.cost, currency) +
-      (entry.tokens ? ' · ' + Number(entry.tokens).toLocaleString() + ' tokens' : '') +
-      t('（估算，按记录时的价格）', ' (estimate at recorded price)')
-    if (pill.title !== title) pill.title = title
-    if (pill.getAttribute('aria-label') !== title) pill.setAttribute('aria-label', title)
-    dockState.sessionId = sid
-  }
-
   function paint() {
     updateOverview()
-    paintDock()
     var data = state.data
     if (!data) return
     var currency = data.costCurrency || data.balance && data.balance.currency || 'CNY'
@@ -590,6 +668,8 @@
   function fetchData(force) {
     if (state.loading) return
     state.loading = true
+    var refreshButton = overviewPanel && overviewPanel.__dshRefs && overviewPanel.__dshRefs.refresh
+    if (refreshButton) refreshButton.setAttribute('data-spin', 'true')
     var url = DATA_URL + (force ? '?force=1' : '')
     fetch(url, { cache: 'no-store' })
       .then(function (res) {
@@ -608,13 +688,33 @@
         state.error = String((err && err.message) || err)
         updateOverview()
       })
-      .finally(function () { state.loading = false })
+      .finally(function () {
+        state.loading = false
+        if (refreshButton) refreshButton.setAttribute('data-spin', 'false')
+      })
   }
+
+  document.addEventListener('pointerdown', function (event) {
+    if (!panelOpen) return
+    var panel = overviewPanel
+    var card = overviewPill
+    if (!panel || !card) return
+    if (panel.contains(event.target) || card.contains(event.target)) return
+    setPanelOpen(false)
+  }, true)
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape' || !panelOpen) return
+    setPanelOpen(false)
+    if (overviewPill) overviewPill.focus()
+  })
 
   var observer = new MutationObserver(schedulePaint)
   observer.observe(document.documentElement, { childList: true, subtree: true })
   window.addEventListener('focus', function () { fetchData(false) })
-  window.addEventListener('resize', positionOverview)
+  window.addEventListener('resize', function () {
+    positionOverview()
+    if (panelOpen) positionPanel()
+  })
   setInterval(function () { fetchData(false) }, POLL_MS)
   setInterval(paint, 3000)
   paint()
