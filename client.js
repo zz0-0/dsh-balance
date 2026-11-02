@@ -374,7 +374,7 @@
         peak.hoursText ? t('高峰：', 'Peak: ') + peak.hoursText : '')
       setText(el.querySelector('.dsh-balance-detail-next'),
         t('下次：', 'Next: ') + (peak.nextAt ? peak.localNext + ' ' + peak.nextLabel +
-          ' · ' + (zoneName(peak.nextAt, peak.zone) || peak.zone) + t('（北京 ', ' (Beijing ') + peak.beijingNext + '）' : t('未知', 'unknown')))
+          ' · ' + (zoneName(peak.nextAt, peak.zone) || peak.zone) + t('（北京 ', ' (Beijing ') + peak.beijingNext + t('）', ')') : t('未知', 'unknown')))
       setText(el.querySelector('.dsh-balance-detail-price'),
         t('价格：', 'Price: ') +
           (state.data.pricing && state.data.pricing.source === 'official' ? t('官方', 'official') : t('缓存/默认', 'cache/default')) +
