@@ -20,7 +20,9 @@ peak/off-peak pricing window** in a window-anchored card, and estimates the
 - **Native detail panel** — click the card to open a menu-style panel above it:
   account balance / topped-up / granted, next switch in local and Beijing time,
   current local/Beijing time, peak hours, price-table source and update time,
-  ledger path, and a refresh button. Closes on outside click or `Esc`.
+  ledger path, and a refresh button. The granted row only appears while some
+  granted credit remains and links to the Billing page for its expiry. Closes on
+  outside click or `Esc`.
 - **Cost estimates** — per-conversation and per-workspace estimates in the
   sidebar, summed from a persistent ledger that records each usage event once.
 - **Dynamic pricing** — CNY and USD price tables and the peak-hour windows are
@@ -151,6 +153,11 @@ both CNY and USD, then displays the bucket for the primary account currency: the
 currencies have a positive balance, the card shows both stacked while estimates
 use the larger one. A USD-only account uses the USD pricing table and `$`
 badges.
+
+**Granted credit expiry.** The official balance API reports only the unexpired
+granted total, not per-grant expiry dates. The panel therefore links the granted
+row to the DeepSeek Billing page (`https://platform.deepseek.com/transactions`)
+while a granted balance exists, and hides the row once it reaches zero.
 
 ## How it works
 

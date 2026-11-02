@@ -69,6 +69,8 @@
     '.dsh-balance-panel-grid dt{color:var(--dsw-alias-label-tertiary,CanvasText);overflow-wrap:anywhere}',
     '.dsh-balance-panel-grid dd{color:var(--dsw-alias-label-secondary,CanvasText);text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}',
     '.dsh-balance-panel-grid dd[data-warn="true"]{color:var(--dsw-alias-state-error-primary,#d5484a)}',
+    '.dsh-balance-panel-grid dd a{color:var(--dsw-alias-link,CanvasText);text-decoration:none;white-space:nowrap}',
+    '.dsh-balance-panel-grid dd a:hover{text-decoration:underline dotted var(--dsw-alias-link,CanvasText);text-underline-offset:2px}',
     '.dsh-balance-panel-foot{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:.5px solid var(--dsw-alias-border-l2,color-mix(in srgb,CanvasText 12%,transparent));color:var(--dsw-alias-label-tertiary,CanvasText);font-size:11px;line-height:16px}',
     '.dsh-balance-panel-refresh{display:inline-flex;align-items:center;justify-content:center;flex:none;width:20px;height:20px;margin-left:auto;padding:0;border:0;border-radius:24px;background:transparent;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:13px;line-height:1;cursor:pointer}',
     '.dsh-balance-panel-refresh:hover{color:var(--dsw-alias-label-secondary,CanvasText);background:var(--dsw-alias-interactive-bg-hover)}',
@@ -430,6 +432,17 @@
       dt.textContent = rows[i][0]
       var dd = document.createElement('dd')
       dd.textContent = rows[i][1]
+      var link = rows[i][3]
+      if (link) {
+        dd.appendChild(document.createTextNode(t('（', ' (')))
+        var anchor = document.createElement('a')
+        anchor.href = link.href
+        anchor.target = '_blank'
+        anchor.rel = 'noreferrer noopener'
+        anchor.textContent = link.text
+        dd.appendChild(anchor)
+        dd.appendChild(document.createTextNode(t('）', ')')))
+      }
       if (rows[i][2] === 'warn') dd.setAttribute('data-warn', 'true')
       el.appendChild(dt)
       el.appendChild(dd)
@@ -455,12 +468,28 @@
     var balanceRows = []
     if (balance.ok && balance.balances.length) {
       var multi = balance.balances.length > 1
+      var grantedHintShown = false
       for (var i = 0; i < balance.balances.length; i += 1) {
         var b = balance.balances[i]
         var suffix = multi ? ' · ' + b.currency : ''
+        var granted = Number(b.granted) || 0
         balanceRows.push([t('账户余额', 'Account balance') + suffix, money(b.total, b.currency)])
         balanceRows.push([t('充值余额', 'Topped up') + suffix, money(b.toppedUp, b.currency)])
-        balanceRows.push([t('赠送余额', 'Granted') + suffix, money(b.granted, b.currency)])
+        // The granted row only exists while some granted credit is left; when it
+        // is used up there is nothing to explain and the row disappears. The
+        // official API exposes only the unexpired granted total, so per-grant
+        // expiry dates are on the Billing page rather than invented here.
+        if (granted > 0.000000001) {
+          var grantedRow = [t('赠送余额', 'Granted') + suffix, money(granted, b.currency)]
+          if (!grantedHintShown) {
+            grantedRow[3] = {
+              text: t('有效期见账单页', 'expiry on Billing page'),
+              href: 'https://platform.deepseek.com/transactions',
+            }
+            grantedHintShown = true
+          }
+          balanceRows.push(grantedRow)
+        }
       }
     } else {
       balanceRows.push([t('账户余额', 'Account balance'), balance.error || t('不可用', 'Unavailable'), 'warn'])
