@@ -274,35 +274,48 @@
     return card
   }
 
+  var CARD_WIDTH = 172
+  var CARD_EDGE = 12
+  var CARD_GAP = 8
+
   function positionOverview() {
     var card = overviewPill
     if (!card || !card.isConnected) return
+    card.style.width = CARD_WIDTH + 'px'
+
+    // The card is a window-level status box, not part of the composer: it
+    // always hugs the bottom-right corner of the viewport. The composer only
+    // matters when it really occupies that corner (a wide composer on a
+    // narrow window); then the card sits just above it instead of on top of
+    // it. In the hero state — no conversation yet, so the composer is
+    // vertically centered — the card stays at the bottom of the window
+    // instead of floating next to the centered input.
+    var right = CARD_EDGE
+    var bottom = CARD_EDGE
+
     var input = document.querySelector('[data-composer-input]')
     var composer = input ? input.closest('[data-composer-card]') : null
     if (!composer && input) composer = input
     if (!composer) composer = document.querySelector('[data-composer-card]')
     var rect = composer ? composer.getBoundingClientRect() : null
-    if (!rect || rect.width === 0) {
-      card.style.left = 'auto'
-      card.style.right = '16px'
-      card.style.bottom = '16px'
-      return
+
+    if (rect && rect.width > 0) {
+      var cardLeft = window.innerWidth - right - CARD_WIDTH
+      var cardTop = window.innerHeight - bottom - (card.offsetHeight || 0)
+      var overlaps = rect.right + CARD_GAP > cardLeft &&
+        rect.left - CARD_GAP < window.innerWidth - right &&
+        rect.bottom + CARD_GAP > cardTop &&
+        rect.top - CARD_GAP < window.innerHeight - bottom
+      if (overlaps) {
+        // Lift above the composer, keeping the card right-aligned to it.
+        right = Math.max(CARD_EDGE, window.innerWidth - rect.right)
+        bottom = Math.max(CARD_EDGE, window.innerHeight - rect.top + CARD_GAP)
+      }
     }
-    var width = 172
-    var space = window.innerWidth - rect.right - 12
-    if (space >= width) {
-      // Always anchored at the same bottom-right spot. Expanding only grows
-      // the card upward; it never jumps above the composer or changes width.
-      card.style.width = width + 'px'
-      card.style.left = 'auto'
-      card.style.right = '12px'
-      card.style.bottom = Math.max(8, window.innerHeight - rect.bottom) + 'px'
-    } else {
-      card.style.width = width + 'px'
-      card.style.left = Math.max(8, rect.right - width) + 'px'
-      card.style.right = 'auto'
-      card.style.bottom = Math.max(8, window.innerHeight - rect.top + 8) + 'px'
-    }
+
+    card.style.left = 'auto'
+    card.style.right = right + 'px'
+    card.style.bottom = bottom + 'px'
   }
 
   function updateOverview() {
@@ -601,6 +614,7 @@
   var observer = new MutationObserver(schedulePaint)
   observer.observe(document.documentElement, { childList: true, subtree: true })
   window.addEventListener('focus', function () { fetchData(false) })
+  window.addEventListener('resize', positionOverview)
   setInterval(function () { fetchData(false) }, POLL_MS)
   setInterval(paint, 3000)
   paint()

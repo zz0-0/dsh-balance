@@ -15,7 +15,7 @@ A DeepSeek Harness plugin for:
 ## Install
 
 ```bash
-dsh plugin --profile web add link:/home/zz/Project/dsh-balance-plugin
+dsh plugin --profile web add link:/home/zz/Project/dsh/dsh-balance-plugin
 systemctl --user restart dsh-web
 ```
 
@@ -96,11 +96,15 @@ larger one. A USD-only account uses the USD pricing table and `$` badges.
 
 ## UI
 
-- **Main-page card** (right of the composer, bottom-aligned with the text box,
-  on the scrollbar side): balance, current window (`高峰`/`谷价`), remaining
-  time, next switch time with the local zone abbreviation, plus a refresh
-  button and a chevron. If both CNY and USD balances are positive, both are
-  shown stacked.
+- **Main-page card** (fixed to the bottom-right corner of the window, on the
+  scrollbar side, independent of the composer's position): balance, current
+  window (`高峰`/`谷价`), remaining time, next switch time with the local zone
+  abbreviation, plus a refresh button and a chevron. If both CNY and USD
+  balances are positive, both are shown stacked. Because it is anchored to the
+  window rather than to the text box, it stays at the bottom in the
+  no-conversation/hero state too, where the composer is vertically centered.
+  Only when the composer actually occupies the bottom-right corner (a wide
+  composer on a narrow window) does the card lift just above it.
 - **Click to expand**: clicking the card opens an inline detail section in the
   same card (not a hover tooltip and not a dialog) with per-currency
   topped-up/granted breakdown, Beijing/local time, peak hours, next switch,
@@ -147,7 +151,8 @@ workspace sidebar already exposes:
 
 - `[data-row-key="session:<sessionId>"]`
 - `[data-row-key="workspace:<workspaceId>"]`
-- `[data-composer-card]` for the bottom-aligned card position
+- `[data-composer-card]` to keep the window-anchored card off the composer
+  when the composer reaches the bottom-right corner
 - `[data-slot="conversation.composer.dock"]` for the per-conversation cost pill
 - `[data-composer-stat="activity|usage"]` as style samples
 
