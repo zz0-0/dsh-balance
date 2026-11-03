@@ -475,21 +475,19 @@
         var granted = Number(b.granted) || 0
         balanceRows.push([t('账户余额', 'Account balance') + suffix, money(b.total, b.currency)])
         balanceRows.push([t('充值余额', 'Topped up') + suffix, money(b.toppedUp, b.currency)])
-        // The granted row only exists while some granted credit is left; when it
-        // is used up there is nothing to explain and the row disappears. The
-        // official API exposes only the unexpired granted total, so per-grant
-        // expiry dates are on the Billing page rather than invented here.
-        if (granted > 0.000000001) {
-          var grantedRow = [t('赠送余额', 'Granted') + suffix, money(granted, b.currency)]
-          if (!grantedHintShown) {
-            grantedRow[3] = {
-              text: t('有效期见账单页', 'expiry on Billing page'),
-              href: 'https://platform.deepseek.com/transactions',
-            }
-            grantedHintShown = true
+        // The granted row stays visible at zero (the plugin's original shape);
+        // only the expiry hint disappears, because there is nothing left to
+        // expire. The official API exposes only the unexpired granted total,
+        // so per-grant expiry dates are on the Billing page, not invented here.
+        var grantedRow = [t('赠送余额', 'Granted') + suffix, money(granted, b.currency)]
+        if (granted > 0.000000001 && !grantedHintShown) {
+          grantedRow[3] = {
+            text: t('有效期见账单页', 'expiry on Billing page'),
+            href: 'https://platform.deepseek.com/transactions',
           }
-          balanceRows.push(grantedRow)
+          grantedHintShown = true
         }
+        balanceRows.push(grantedRow)
       }
     } else {
       balanceRows.push([t('账户余额', 'Account balance'), balance.error || t('不可用', 'Unavailable'), 'warn'])
