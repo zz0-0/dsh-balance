@@ -36,9 +36,10 @@ peak/off-peak pricing window** in a window-anchored card, and estimates the
 
 ## Requirements
 
-- **DSH 0.2.1.x** with the web profile. Tested with `0.2.1-rc.3`; the package
-  declares `engines.dsh = ">=0.2.1-0 <0.2.2-0"` and DSH refuses to mount it on
-  other lines.
+- **DSH 0.2.x** (0.2.1 and 0.2.2 lines) with the web profile. Tested with
+  `0.2.2-rc.1`; the package declares
+  `engines.dsh = ">=0.2.1-0 <0.3.0-0"` and DSH refuses to mount it on other
+  lines.
 - Node.js `^22.19.0 || >=24.0.0` (the DSH requirement).
 - A DeepSeek API key configured in DSH's credentials as `DEEPSEEK_API_KEY`.
 
@@ -201,7 +202,7 @@ Cache files, all under `~/.dsh/` (or `$DSH_HOME`):
 - **Plugin not visible after install** — restart the `dsh web` process and
   hard-refresh the browser. Verify the profile lists the plugin.
 - **Install refused with an incompatible-version error** — the package declares
-  `engines.dsh` for the DSH 0.2.1 line only.
+  `engines.dsh` for the DSH 0.2.x line only; update the plugin or DSH.
 
 ## Development
 
