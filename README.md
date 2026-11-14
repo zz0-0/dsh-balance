@@ -26,8 +26,8 @@ peak/off-peak pricing window** in a window-anchored card, and estimates the
 - **Cost estimates** — per-conversation and per-workspace estimates in the
   sidebar, summed from a persistent ledger that records each usage event once.
 - **Dynamic pricing** — CNY and USD price tables and the peak-hour windows are
-  fetched from the official DeepSeek pricing pages; the Chinese holiday calendar
-  comes from `api.apihubs.cn`.
+  fetched from the official DeepSeek pricing pages. The holiday calendar is
+  opt-in (`DSH_BALANCE_HOLIDAYS=1`); without it only weekends are valley.
 - **Theme and language aware** — uses the DSH menu-surface design tokens
   (light/dark, radius, type scale), follows the DSH UI language
   (`zh-*` / English).
@@ -124,13 +124,15 @@ Peak is Beijing weekday **09:00–12:00** and **14:00–18:00**. Weekends are
 always off-peak (from 2026-08-23), and a weekday marked as a public holiday is
 off-peak. A make-up weekend is still a weekend, so it is off-peak.
 
-The holiday calendar is fetched from:
+The holiday calendar is **opt-in**. Without `DSH_BALANCE_HOLIDAYS=1` the plugin
+makes no third-party request: weekends are valley, weekdays are peak, and no
+holiday adjustment is applied. With the flag it fetches:
 
 ```
 https://api.apihubs.cn/holiday/get?year=YYYY&size=500
 ```
 
-for the current and next year, and cached for 30 days.
+for the current and next year, and caches the result for 30 days.
 
 ### The ledger never reprices old spend
 
@@ -179,13 +181,13 @@ Cache files, all under `~/.dsh/` (or `$DSH_HOME`):
 - `.dsh-balance-costs.json` — the cost ledger
 - `.dsh-balance-pricing.json` — current price table and peak hours
 - `.dsh-balance-pricing-history.json` — one entry per changed price snapshot
-- `.dsh-balance-holidays.json` — current holiday calendar
+- `.dsh-balance-holidays.json` — holiday calendar (only with the opt-in flag)
 
 ## Privacy
 
 - **Outbound requests**: `api.deepseek.com/user/balance` (with your API key),
-  the two DeepSeek pricing pages, and `api.apihubs.cn/holiday/get`. Nothing
-  else, and no telemetry.
+  the two DeepSeek pricing pages, and — only with `DSH_BALANCE_HOLIDAYS=1` —
+  `api.apihubs.cn/holiday/get`. Nothing else, and no telemetry.
 - **Local-only**: the ledger and caches stay in `~/.dsh/`. The browser only
   requests `/dsh-balance/data` from your local DSH server.
 - **Credential handling**: the key is resolved host-side through DSH's

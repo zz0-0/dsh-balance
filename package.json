@@ -43,5 +43,12 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "node --test test/parsing.test.mjs"
   }
 }
