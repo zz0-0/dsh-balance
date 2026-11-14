@@ -31,6 +31,14 @@ test('rejects a page without the pricing marker or table', () => {
   assert.equal(parsePricingPage('<p>no prices here</p>', 'CNY'), null)
 })
 
+test('rejects a truncated pricing table', () => {
+  const html = `<table>
+<tr><td></td><td>deepseek-flash</td></tr>
+<tr><td>价格(百万tokens)</td><td>0.02</td></tr>
+</table>`
+  assert.equal(parsePricingPage(html, 'CNY'), null)
+})
+
 test('parses Beijing peak-hour ranges', () => {
   const ranges = parsePeakHours('<p>北京时间 9:00-12:00、14:00-18:00 为高峰时段</p>')
   assert.deepEqual(ranges, [[9, 12], [14, 18]])
