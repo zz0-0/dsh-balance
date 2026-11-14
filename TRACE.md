@@ -11,5 +11,5 @@
 
 - 链/步骤：coding → bug-to-check / 测试
 - 有效：rows.length 守卫；npm test 6/6；pre-push 仍绿
-- 失败：截断表原来抛 TypeError，而不是返回 null
+- 失败：红：e0bd7c5 + 新用例 → `not ok 3`，TypeError: Cannot read properties of undefined (reading 'slice')
 - 环境 diff：lib/index.js（+1 守卫）+ test/parsing.test.mjs（+1 用例）
