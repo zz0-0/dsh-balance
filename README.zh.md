@@ -21,8 +21,8 @@ Web 插件：在窗口右下角的卡片里显示 **DeepSeek 账户真实余额*
   `Esc` 关闭。
 - **费用估算** — 侧边栏中每个会话、每个工作区的估算费用，来自一份每条用量事件只
   记录一次、不会重新计价的持久账本。
-- **动态价格** — CNY/USD 价格表与高峰时段从 DeepSeek 官方定价页抓取；中国节假日
-  日历来自 `api.apihubs.cn`。
+- **动态价格** — CNY/USD 价格表与高峰时段从 DeepSeek 官方定价页抓取。节假日日历
+  是可选项（`DSH_BALANCE_HOLIDAYS=1`）；不设置时只按周末算谷价。
 - **主题与语言** — 使用 DSH 菜单表面的设计变量（明暗主题、圆角、字号），并跟随
   DSH UI 语言（`zh-*` / English）。
 - **峰谷切换通知** — 可选；仅当已为 DSH 站点授予通知权限时，在峰谷切换时发送浏览器
@@ -108,7 +108,8 @@ systemctl --user restart dsh-web
 （自 2026-08-23 起）；被标记为法定节假日的工作日按谷价；调休的周末仍然是周末，
 所以也是谷价。
 
-节假日日历来自：
+节假日日历是**可选项**。不设置 `DSH_BALANCE_HOLIDAYS=1` 时不发任何第三方请求：
+周末按谷价，工作日按高峰，不做节假日调整。设置后才抓取：
 
 ```
 https://api.apihubs.cn/holiday/get?year=YYYY&size=500
@@ -158,12 +159,13 @@ profile。它分为两部分：
 - `.dsh-balance-costs.json` — 费用账本
 - `.dsh-balance-pricing.json` — 当前价格表与高峰时段
 - `.dsh-balance-pricing-history.json` — 每次价格快照变化记录一条
-- `.dsh-balance-holidays.json` — 当前节假日日历
+- `.dsh-balance-holidays.json` — 节假日日历（仅在开启选项时）
 
 ## 隐私
 
 - **对外请求**：`api.deepseek.com/user/balance`（携带你的 API Key）、两个
-  DeepSeek 定价页，以及 `api.apihubs.cn/holiday/get`。没有其他请求，也没有遥测。
+  DeepSeek 定价页，以及仅在 `DSH_BALANCE_HOLIDAYS=1` 时的
+  `api.apihubs.cn/holiday/get`。没有其他请求，也没有遥测。
 - **仅本地**：账本和缓存保存在 `~/.dsh/`。浏览器只向本地 DSH 服务请求
   `/dsh-balance/data`。
 - **凭据处理**：API Key 在 Host 侧通过 DSH credentials 解析，不会被序列化进浏览器
