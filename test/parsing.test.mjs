@@ -52,3 +52,8 @@ test('parses fractional peak-hour ranges', () => {
   const ranges = parsePeakHours('<p>北京时间 9:30-12:00、14:00-18:30 为高峰时段</p>')
   assert.deepEqual(ranges, [[9.5, 12], [14, 18.5]])
 })
+
+test('parses a peak window that crosses midnight', () => {
+  const ranges = parsePeakHours('<p>北京时间 22:00-02:00 为高峰时段</p>')
+  assert.deepEqual(ranges, [[22, 26]])
+})
