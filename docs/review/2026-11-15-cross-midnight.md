@@ -1,3 +1,7 @@
+<!--
+kind: review
+-->
+
 # 复审：跨零点峰时窗口
 
 diff：`git diff HEAD`
