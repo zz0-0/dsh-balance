@@ -1,13 +1,20 @@
-# TRACE
+# TODO
 
-## 2026-11-15 · 工作回路 v1 + 分数峰段用例
+## 未完成
+
+| id | 状态 | 任务 | 指针 | 下一步 | 验收 |
+|---|---|---|---|---|---|
+
+## 已完成
+
+### 2026-11-15 · 工作回路 v1 + 分数峰段用例
 
 - 链/步骤：coding → 测试 / closeout
 - 有效：PROJECT.md 让入口、闸门、链可查；npm test 5/5；pre-push 仍绿
 - 失败：无
-- 环境 diff：`test/parsing.test.mjs`（+1 用例）+ `PROJECT.md` / `AGENTS.md` / `TRACE.md`
+- 环境 diff：`test/parsing.test.mjs`（+1 用例）+ `PROJECT.md` / `AGENTS.md` / `TODO.md`
 
-## 2026-11-15 · 截断价格表不再抛异常
+### 2026-11-15 · 截断价格表不再抛异常
 
 - 链/步骤：coding → bug-to-check / 测试
 - 有效：rows.length 守卫；npm test 6/6；pre-push 仍绿
