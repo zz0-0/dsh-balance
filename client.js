@@ -165,11 +165,86 @@
   var overviewPill = null
   var overviewPanel = null
   var panelOpen = false
+  var panelPinned = false
+  var hoverOpenTimer = 0
+  var hoverCloseTimer = 0
   var CARD_WIDTH = 172
   var CARD_EDGE = 12
   var CARD_GAP = 8
   var PANEL_GAP = 8
   var PANEL_MARGIN = 12
+  var HOVER_OPEN_MS = 140
+  var HOVER_CLOSE_MS = 180
+  var PANEL_EVENT = 'dsh-dock-panel-open'
+
+  function canHover() {
+    try {
+      return window.matchMedia('(hover: hover)').matches
+    } catch (err) {
+      return true
+    }
+  }
+
+  function clearHoverTimers() {
+    if (hoverOpenTimer) clearTimeout(hoverOpenTimer)
+    if (hoverCloseTimer) clearTimeout(hoverCloseTimer)
+    hoverOpenTimer = 0
+    hoverCloseTimer = 0
+  }
+
+  function announcePanelOpen() {
+    try {
+      window.dispatchEvent(new CustomEvent(PANEL_EVENT, { detail: { id: 'dsh-balance' } }))
+    } catch (err) {}
+  }
+
+  /**
+   * Hover opens the panel, click pins it. The delay covers the 8px gap
+   * between the card and the panel, so moving the pointer from one to the
+   * other does not close it. A pinned panel ignores pointerleave; a hovered
+   * one closes after the pointer has been away for a moment.
+   */
+  function scheduleHoverOpen() {
+    if (!canHover()) return
+    clearHoverTimers()
+    if (panelOpen) return
+    hoverOpenTimer = setTimeout(function () {
+      hoverOpenTimer = 0
+      if (panelOpen) return
+      panelPinned = false
+      setPanelOpen(true)
+    }, HOVER_OPEN_MS)
+  }
+
+  function scheduleHoverClose() {
+    if (!canHover() || !panelOpen || panelPinned) return
+    clearHoverTimers()
+    hoverCloseTimer = setTimeout(function () {
+      hoverCloseTimer = 0
+      if (panelOpen && !panelPinned) setPanelOpen(false)
+    }, HOVER_CLOSE_MS)
+  }
+
+  function cancelHoverClose() {
+    clearHoverTimers()
+  }
+
+  function togglePinned() {
+    clearHoverTimers()
+    if (panelOpen) {
+      if (panelPinned) {
+        setPanelOpen(false)
+        return
+      }
+      // A hover-opened panel turns into a pinned one on click instead of
+      // closing under the pointer that just arrived.
+      panelPinned = true
+      updateOverview()
+      return
+    }
+    panelPinned = true
+    setPanelOpen(true)
+  }
 
   function walletIcon() {
     return '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3.5" width="12" height="9.5" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2.2 6.4h11.6" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="11.2" cy="9.6" r="1" fill="currentColor"/></svg>'
@@ -256,13 +331,17 @@
       '</div>',
       '<div class="dsh-balance-next"></div>',
     ].join('')
-    card.addEventListener('click', function () { setPanelOpen(!panelOpen) })
+    card.addEventListener('click', function () { togglePinned() })
     card.addEventListener('keydown', function (event) {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault()
-        setPanelOpen(!panelOpen)
+        togglePinned()
       }
     })
+    if (canHover()) {
+      card.addEventListener('pointerenter', scheduleHoverOpen)
+      card.addEventListener('pointerleave', scheduleHoverClose)
+    }
     document.body.appendChild(card)
     overviewPill = card
     return card
@@ -315,6 +394,10 @@
       event.stopPropagation()
       fetchData(true)
     })
+    if (canHover()) {
+      panel.addEventListener('pointerenter', cancelHoverClose)
+      panel.addEventListener('pointerleave', scheduleHoverClose)
+    }
     document.body.appendChild(panel)
     overviewPanel = panel
     return panel
@@ -323,14 +406,18 @@
   function setPanelOpen(open) {
     var card = ensureOverviewPill()
     var panel = ensureOverviewPanel()
+    clearHoverTimers()
     panelOpen = open
     card.setAttribute('aria-expanded', open ? 'true' : 'false')
     if (!open) {
+      panelPinned = false
       panel.hidden = true
       panel.setAttribute('aria-hidden', 'true')
       panel.style.visibility = ''
+      updateOverview()
       return
     }
+    announcePanelOpen()
     panel.hidden = false
     panel.setAttribute('aria-hidden', 'false')
     // Measure and place while invisible so the panel never flashes at 0,0.
@@ -400,6 +487,31 @@
     card.style.bottom = bottom + 'px'
   }
 
+  /**
+   * The other bottom-right cards (notably the status plugin) are separate
+   * fixed elements with their own z-index. A detail panel that opens above
+   * the balance card but behind the status card loses its footer and refresh
+   * button. Lift the panel above every sibling card that overlaps the panel's
+   * column, so it opens outside the stack rather than under it.
+   */
+  function panelCeiling(anchor, left, width) {
+    var ceiling = anchor.top - PANEL_GAP
+    var right = left + width
+    var siblings = document.querySelectorAll('.dsh-status-card, .dsh-status-panel')
+    for (var i = 0; i < siblings.length; i += 1) {
+      var node = siblings[i]
+      if (node === overviewPanel || node.hidden) continue
+      var computed = window.getComputedStyle(node)
+      if (computed.display === 'none' || computed.visibility === 'hidden') continue
+      var rect = node.getBoundingClientRect()
+      if (rect.width <= 0 || rect.height <= 0) continue
+      if (rect.top >= anchor.top) continue
+      if (rect.right + PANEL_GAP <= left || rect.left - PANEL_GAP >= right) continue
+      ceiling = Math.min(ceiling, rect.top - PANEL_GAP)
+    }
+    return ceiling
+  }
+
   function positionPanel() {
     var card = overviewPill
     var panel = overviewPanel
@@ -415,7 +527,7 @@
       Math.max(PANEL_MARGIN, anchor.right - width),
       Math.max(PANEL_MARGIN, vw - width - PANEL_MARGIN),
     )
-    var top = anchor.top - height - PANEL_GAP
+    var top = panelCeiling(anchor, left, width) - height
     if (top < PANEL_MARGIN) top = Math.min(anchor.bottom + PANEL_GAP, vh - height - PANEL_MARGIN)
     panel.style.left = Math.round(left) + 'px'
     panel.style.top = Math.round(Math.max(PANEL_MARGIN, top)) + 'px'
@@ -577,7 +689,9 @@
 
     updatePanel(balance, peak)
 
-    var hint = t('点击查看余额详情', 'Click for balance details')
+    var hint = panelOpen
+      ? (panelPinned ? t('点击收起', 'Click to collapse') : t('点击固定详情', 'Click to pin details'))
+      : t('悬停查看余额详情 · 点击固定', 'Hover for balance details · click to pin')
     if (el.title !== hint) el.title = hint
     if (el.getAttribute('aria-label') !== hint) el.setAttribute('aria-label', hint)
     el.setAttribute('aria-expanded', panelOpen ? 'true' : 'false')
@@ -735,6 +849,10 @@
     if (overviewPill) overviewPill.focus()
   })
 
+  window.addEventListener(PANEL_EVENT, function (event) {
+    if (event && event.detail && event.detail.id === 'dsh-balance') return
+    if (panelOpen) setPanelOpen(false)
+  })
   var observer = new MutationObserver(schedulePaint)
   observer.observe(document.documentElement, { childList: true, subtree: true })
   window.addEventListener('focus', function () { fetchData(false) })

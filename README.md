@@ -17,12 +17,7 @@ peak/off-peak pricing window** in a window-anchored card, and estimates the
   bottom even on the no-conversation/hero screen, and moves above the composer
   or the per-conversation status row when they reach that corner, so it never
   covers other readings.
-- **Native detail panel** — click the card to open a menu-style panel above it:
-  account balance / topped-up / granted, next switch in local and Beijing time,
-  current local/Beijing time, peak hours, price-table source and update time,
-  ledger path, and a refresh button. The granted row is always shown (`0` when
-  empty) and links to the Billing page for its expiry while some granted credit
-  remains. Closes on outside click or `Esc`.
+- **Native detail panel** — hover the card to open a menu-style panel above it (click to pin it; hover away, click outside, or press `Esc` to close): account balance / topped-up / granted, next switch in local and Beijing time, current local/Beijing time, peak hours, price-table source and update time, ledger path, and a refresh button. The panel automatically clears the status card and any other bottom-right sibling, so it opens above the whole stack instead of behind it. The granted row is always shown (`0` when empty) and links to the Billing page for its expiry while some granted credit remains.
 - **Cost estimates** — per-conversation and per-workspace estimates in the
   sidebar, summed from a persistent ledger that records each usage event once.
 - **Dynamic pricing** — CNY and USD price tables and the peak-hour windows are
@@ -84,9 +79,11 @@ systemctl --user restart dsh-web
 
 ## Usage
 
-Click the balance card in the bottom-right corner to open the detail panel.
-The card itself shows the total balance, the current pricing window, the
-countdown to the next switch, and that switch time in your local zone.
+Hover the balance card in the bottom-right corner to open the detail panel;
+click it to pin the panel open. The card itself shows the total balance, the
+current pricing window, the countdown to the next switch, and that switch time
+in your local zone. The panel is placed above the status card and any other
+bottom-right sibling, never underneath them.
 
 The sidebar shows an `≈¥…` estimate on each conversation row and the sum of its
 conversations on each workspace row. Hovering a badge shows its tokens and the
