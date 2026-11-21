@@ -3,11 +3,11 @@
   window.__dshBalanceInstalled = true
 
   // Remove UI left by earlier builds (the sidebar-footer experiment, the old
-  // floating card, and the previous inline detail section) so a reload
-  // restores the original sidebar styling.
+  // floating card, the previous inline detail section, and the footer chip) so
+  // a reload restores the original sidebar styling.
   try {
     document.querySelectorAll(
-      '#dsh-balance-floating, .dsh-balance-popover:not(.dsh-balance-card), .dsh-balance-panel, [data-slot="sidebar"] [data-dsh-balance-overview]',
+      '#dsh-balance-floating, .dsh-balance-popover, .dsh-balance-panel, .dsh-balance-chip, [data-slot="sidebar"] [data-dsh-balance-overview]',
     ).forEach(function (el) { el.remove() })
   } catch (err) {}
 
@@ -41,28 +41,47 @@
   // Canvas fallback so an older/renamed token cannot make the UI disappear.
   var css = document.createElement('style')
   css.textContent = [
-    '.dsh-balance-popover{position:fixed;z-index:950;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;width:172px;padding:8px 10px;border-radius:var(--dsw-radius-lg,12px);font-family:var(--dsw-font-family,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);font-size:12px;line-height:18px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,CanvasText);background:var(--dsw-specific-menu,color-mix(in srgb,Canvas 96%,transparent));--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,color-mix(in srgb,CanvasText 14%,transparent));box-shadow:var(--dsw-elevation-prominent,0 10px 34px rgba(0,0,0,.18));backdrop-filter:var(--dsw-menu-backdrop-filter,blur(10px));user-select:none;cursor:pointer;transition:background .12s ease}',
-    '.dsh-balance-popover:hover{--dsw-elevation-stroke-color:var(--dsw-alias-border-l2,color-mix(in srgb,CanvasText 20%,transparent))}',
-    '.dsh-balance-popover .dsh-balance-head{display:flex;align-items:flex-start;gap:6px;min-width:0}',
-    '.dsh-balance-popover .dsh-balance-label{color:var(--dsw-alias-label-tertiary,CanvasText);font-size:12px;line-height:18px}',
-    '.dsh-balance-popover .dsh-balance-amount{display:flex;flex-direction:column;min-width:0;color:var(--dsw-alias-label-primary,CanvasText);font-size:12px;line-height:18px;font-weight:500}',
-    '.dsh-balance-popover .dsh-balance-amount-line{white-space:nowrap}',
-    '.dsh-balance-popover .dsh-balance-chevron{margin-left:auto;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:10px;line-height:18px;opacity:.7;transition:transform .15s ease}',
-    '.dsh-balance-card[aria-expanded="true"] .dsh-balance-chevron{transform:rotate(180deg)}',
-    '.dsh-balance-popover .dsh-balance-line{display:flex;align-items:center;gap:5px;min-width:0}',
-    '.dsh-balance-popover .dsh-balance-dot{display:inline-block;width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:var(--dsw-alias-state-success-primary,#3fb950);vertical-align:middle}',
-    '.dsh-balance-popover .dsh-balance-dot.peak{background:var(--dsw-alias-state-warn-primary,#e6a23c)}',
-    '.dsh-balance-popover .dsh-balance-window{color:var(--dsw-alias-label-secondary,CanvasText);font-weight:500;white-space:nowrap}',
-    '.dsh-balance-popover .dsh-balance-remain{margin-left:auto;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:11px;line-height:16px;white-space:nowrap}',
-    '.dsh-balance-popover .dsh-balance-next{color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary,CanvasText));font-size:11px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.dsh-balance-panel{position:fixed;z-index:1100;box-sizing:border-box;display:flex;flex-direction:column;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:16px;border:0;border-radius:var(--dsw-radius-lg,12px);font-family:var(--dsw-font-family,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);font-size:12px;line-height:18px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,CanvasText);background:var(--dsw-specific-menu,color-mix(in srgb,Canvas 96%,transparent));--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,color-mix(in srgb,CanvasText 14%,transparent));box-shadow:var(--dsw-elevation-prominent,0 10px 34px rgba(0,0,0,.18));backdrop-filter:var(--dsw-menu-backdrop-filter,blur(10px));text-align:left;white-space:normal;user-select:text}',
+    // The overview is one text chip on its own 26px line in the sidebar footer,
+    // directly above the Settings trigger. The footer's action row already has
+    // the stock Cordis occupant (a 42px full-width flex item), so a second flex
+    // child there would be squeezed to nothing; this line is a sibling of that
+    // row inside the footer column instead. Nothing floats over the transcript
+    // or the right-hand file panel, and `[data-sidebar-collapsed]` drops the
+    // whole line in the 56px rail.
+    // The chips share the footer's own column, not the list's indented text
+// column: the Settings trigger's content starts at sidebar inline 8 + paint
+// inset 3 + its padding 9 = 20px, and ends 12px from the right edge. The chip
+// adds its own 5px inline padding, so the row pads 7px on each side. List rows
+// sit deeper than this by their own nesting indent.
+    '.dsh-footer-status-row{display:flex;flex:none;align-items:center;gap:8px;box-sizing:border-box;width:100%;min-width:0;overflow:hidden;height:26px;padding:0 7px}',
+    '[data-sidebar-collapsed] .dsh-footer-status-row{display:none}',
+    // Type follows the sidebar: the family is inherited (the button opts back
+    // in), and the size rides the theme's secondary content size so it tracks
+    // the user's font-size setting instead of pinning 11px.
+    '.dsh-balance-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;overflow:hidden;flex:0 1 auto;height:22px;padding:0 5px;border:0;border-radius:var(--dsw-radius-sm,6px);background:transparent;font-family:inherit;font-size:var(--dsh-content-font-size-secondary,13px);line-height:22px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary,CanvasText);white-space:nowrap;cursor:pointer;transition:background .12s ease}',
+    '@media (hover:hover){.dsh-balance-chip:hover{background:var(--dsw-alias-interactive-bg-hover,color-mix(in srgb,CanvasText 7%,transparent))}}',
+    '.dsh-balance-chip[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover,color-mix(in srgb,CanvasText 7%,transparent))}',
+    '.dsh-balance-chip-label{color:var(--dsw-alias-label-tertiary,CanvasText)}',
+    '.dsh-balance-chip .dsh-balance-remain::before{content:"·";margin-right:4px;opacity:.55}',
+    '.dsh-balance-chip .dsh-balance-remain{min-width:0;overflow:hidden;text-overflow:ellipsis}',
+    '.dsh-balance-chip-amount{color:var(--dsw-alias-label-primary,CanvasText);font-weight:500;white-space:nowrap}',
+    '.dsh-balance-dot{display:inline-block;width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:var(--dsw-alias-state-success-primary,#3fb950);vertical-align:middle}',
+    '.dsh-balance-dot.peak{background:var(--dsw-alias-state-warn-primary,#e6a23c)}',
+    '.dsh-balance-dot.unknown{background:currentColor;opacity:.35}',
+    '.dsh-balance-window{color:var(--dsw-alias-label-secondary,CanvasText);font-weight:500;white-space:nowrap}',
+    '.dsh-balance-remain{color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary,CanvasText));white-space:nowrap}',
+    '.dsh-balance-panel{position:fixed;z-index:950;box-sizing:border-box;display:flex;flex-direction:column;width:min(400px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:16px;border:0;border-radius:var(--dsw-radius-lg,12px);font-size:12px;line-height:18px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary,CanvasText);background:var(--dsw-specific-menu,color-mix(in srgb,Canvas 96%,transparent));--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,color-mix(in srgb,CanvasText 14%,transparent));box-shadow:var(--dsw-elevation-prominent,0 10px 34px rgba(0,0,0,.18));backdrop-filter:var(--dsw-menu-backdrop-filter,blur(10px));text-align:left;white-space:normal;user-select:text}',
     '.dsh-balance-panel[hidden]{display:none}',
-    '.dsh-balance-panel-head{display:flex;align-items:flex-start;gap:16px}',
-    '.dsh-balance-panel-title{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--dsw-alias-label-primary,CanvasText);font-weight:500}',
+    '.dsh-balance-panel:focus{outline:none}',
+    '.dsh-balance-panel-head{display:flex;align-items:flex-start;gap:8px}',
+    '.dsh-balance-panel-title{display:inline-flex;align-items:center;gap:6px;flex:1;min-width:0;color:var(--dsw-alias-label-primary,CanvasText);font-weight:500}',
     '.dsh-balance-panel-title svg{flex:none;width:14px;height:14px}',
-    '.dsh-balance-panel-total{margin-left:auto;color:var(--dsw-alias-label-primary,CanvasText);font-weight:500;white-space:nowrap}',
-    '.dsh-balance-panel-subhead{display:flex;align-items:center;gap:5px;margin-top:2px;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:11px;line-height:16px}',
-    '.dsh-balance-panel-subhead .dsh-balance-remain{margin-left:auto}',
+    '.dsh-balance-panel-updated{flex:none;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:11px;line-height:16px;white-space:nowrap}',
+    '.dsh-balance-panel-close{flex:none;margin-left:2px;border:0;background:transparent;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:14px;line-height:1;padding:1px;cursor:pointer}',
+    '.dsh-balance-panel-close:hover{color:var(--dsw-alias-label-secondary,CanvasText)}',
+    '.dsh-balance-panel-summary{display:flex;align-items:center;gap:6px;margin-top:4px;color:var(--dsw-alias-label-tertiary,CanvasText)}',
+    '.dsh-balance-panel-summary .dsh-balance-panel-total{color:var(--dsw-alias-label-primary,CanvasText);font-weight:500;white-space:nowrap}',
+    '.dsh-balance-panel-summary .dsh-balance-remain{margin-left:auto}',
     '.dsh-balance-panel-rule{margin:8px 0 10px;border-top:.5px solid var(--dsw-alias-border-l2,color-mix(in srgb,CanvasText 12%,transparent))}',
     '.dsh-balance-panel-grid{display:grid;grid-template-columns:minmax(76px,auto) minmax(0,1fr);gap:6px 16px;margin:0;padding:0}',
     '.dsh-balance-panel-grid dt,.dsh-balance-panel-grid dd{min-width:0;margin:0;font-size:12px;line-height:18px;font-weight:400}',
@@ -72,12 +91,14 @@
     '.dsh-balance-panel-grid dd a{color:var(--dsw-alias-link,CanvasText);text-decoration:none;white-space:nowrap}',
     '.dsh-balance-panel-grid dd a:hover{text-decoration:underline dotted var(--dsw-alias-link,CanvasText);text-underline-offset:2px}',
     '.dsh-balance-panel-foot{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:.5px solid var(--dsw-alias-border-l2,color-mix(in srgb,CanvasText 12%,transparent));color:var(--dsw-alias-label-tertiary,CanvasText);font-size:11px;line-height:16px}',
+    '.dsh-balance-panel-link{color:var(--dsw-alias-link,CanvasText);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.dsh-balance-panel-link:hover{text-decoration:underline dotted;text-underline-offset:2px}',
     '.dsh-balance-panel-refresh{display:inline-flex;align-items:center;justify-content:center;flex:none;width:20px;height:20px;margin-left:auto;padding:0;border:0;border-radius:24px;background:transparent;color:var(--dsw-alias-label-tertiary,CanvasText);font-size:13px;line-height:1;cursor:pointer}',
     '.dsh-balance-panel-refresh:hover{color:var(--dsw-alias-label-secondary,CanvasText);background:var(--dsw-alias-interactive-bg-hover)}',
     '.dsh-balance-panel-refresh[data-spin="true"]{animation:dsh-balance-spin .8s linear infinite}',
     '@keyframes dsh-balance-spin{to{transform:rotate(360deg)}}',
     '.dsh-balance-panel-note{margin:8px 0 0;color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary,CanvasText));font-size:11px;line-height:16px}',
-    '.dsh-balance-badge{flex:0 0 auto;margin-left:6px;margin-right:2px;padding:1px 6px;border-radius:var(--dsw-radius-sm,8px);font-family:var(--dsw-font-family,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);font-size:11px;line-height:16px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary,CanvasText);background:var(--dsw-alias-interactive-bg-hover,color-mix(in srgb,CanvasText 7%,transparent));pointer-events:none;white-space:nowrap}',
+    '.dsh-balance-badge{flex:0 0 auto;margin-left:6px;margin-right:2px;padding:1px 6px;border-radius:var(--dsw-radius-sm,8px);font-size:11px;line-height:16px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary,CanvasText);background:var(--dsw-alias-interactive-bg-hover,color-mix(in srgb,CanvasText 7%,transparent));pointer-events:none;white-space:nowrap}',
     '.dsh-balance-badge[data-zero="1"]{opacity:.45}',
   ].join('')
   document.head.appendChild(css)
@@ -158,24 +179,41 @@
     }
   }
 
+  // The chip is one 22px line, so it uses a compact countdown ("5h59m"); the
+  // panel keeps the localized long form.
+  function formatCompactRemaining(ms) {
+    if (!Number.isFinite(ms) || ms <= 0) return ''
+    var mins = Math.ceil(ms / 60000)
+    if (mins < 60) return mins + 'm'
+    var h = Math.floor(mins / 60)
+    var m = mins % 60
+    if (h < 24) return h + 'h' + (m ? m + 'm' : '')
+    var d = Math.floor(h / 24)
+    var hh = h % 24
+    return d + 'd' + (hh ? hh + 'h' : '')
+  }
+
   function localTime(ms) {
     return timeInZone(ms, localZone() || undefined)
   }
 
-  var overviewPill = null
+  var overviewChip = null
   var overviewPanel = null
   var panelOpen = false
   var panelPinned = false
   var hoverOpenTimer = 0
   var hoverCloseTimer = 0
-  var CARD_WIDTH = 172
-  var CARD_EDGE = 12
-  var CARD_GAP = 8
   var PANEL_GAP = 8
   var PANEL_MARGIN = 12
-  var HOVER_OPEN_MS = 140
+  // Longer than the old card's 140ms: the footer chip is on the path to
+  // Settings, and a passing pointer should not pop the detail panel.
+  var HOVER_OPEN_MS = 400
   var HOVER_CLOSE_MS = 180
   var PANEL_EVENT = 'dsh-dock-panel-open'
+  // The foot link points at the same official pricing page the host fetched
+  // its table from (CNY and USD have separate pages).
+  var PRICING_CNY_URL = 'https://api-docs.deepseek.com/zh-cn/quick_start/pricing'
+  var PRICING_USD_URL = 'https://api-docs.deepseek.com/quick_start/pricing'
 
   function canHover() {
     try {
@@ -210,15 +248,24 @@
     if (panelOpen) return
     hoverOpenTimer = setTimeout(function () {
       hoverOpenTimer = 0
-      if (panelOpen) return
+      // A pointer that only passed over the chip must not open the panel after
+      // it has left; without this check the pending open survives pointerleave.
+      if (panelOpen || !overviewChip || !overviewChip.matches(':hover')) return
       panelPinned = false
       setPanelOpen(true)
     }, HOVER_OPEN_MS)
   }
 
   function scheduleHoverClose() {
-    if (!canHover() || !panelOpen || panelPinned) return
-    clearHoverTimers()
+    if (!canHover()) return
+    // Always cancel a pending open: the footer chip sits on the way to
+    // Settings, so a pass-through is the common case, not the exception.
+    if (hoverOpenTimer) {
+      clearTimeout(hoverOpenTimer)
+      hoverOpenTimer = 0
+    }
+    if (!panelOpen || panelPinned) return
+    if (hoverCloseTimer) clearTimeout(hoverCloseTimer)
     hoverCloseTimer = setTimeout(function () {
       hoverCloseTimer = 0
       if (panelOpen && !panelPinned) setPanelOpen(false)
@@ -244,6 +291,11 @@
     }
     panelPinned = true
     setPanelOpen(true)
+    // A click or keyboard activation moves into the dialog; hover-open does not
+    // steal focus.
+    if (overviewPanel) {
+      try { overviewPanel.focus({ preventScroll: true }) } catch (err) {}
+    }
   }
 
   function walletIcon() {
@@ -309,48 +361,64 @@
     }
   }
 
-  function ensureOverviewPill() {
-    if (overviewPill && overviewPill.isConnected) return overviewPill
-    var card = document.createElement('div')
-    card.className = 'dsh-balance-popover dsh-balance-card'
-    card.setAttribute('data-dsh-balance-overview', '1')
-    card.setAttribute('role', 'button')
-    card.setAttribute('tabindex', '0')
-    card.setAttribute('aria-haspopup', 'dialog')
-    card.setAttribute('aria-expanded', 'false')
-    card.innerHTML = [
-      '<div class="dsh-balance-head">',
-      '  <span class="dsh-balance-label"></span>',
-      '  <span class="dsh-balance-amount"></span>',
-      '  <span class="dsh-balance-chevron" aria-hidden="true">▾</span>',
-      '</div>',
-      '<div class="dsh-balance-line">',
-      '  <span class="dsh-balance-dot"></span>',
-      '  <span class="dsh-balance-window">…</span>',
-      '  <span class="dsh-balance-remain"></span>',
-      '</div>',
-      '<div class="dsh-balance-next"></div>',
+  // The footer column ends with the action row and then the Settings trigger.
+  // This plugin inserts one full-width line between them, found from the
+  // Settings slot anchor so no generated class name is involved. When the
+  // sidebar remounts (mobile drawer, frame rebuild) the line goes with it, and
+  // the paint loop re-creates the chip.
+  function footerRow() {
+    var settings = document.querySelector('[data-slot="sidebar.settings"]')
+    var settingsArea = settings ? settings.parentElement : null
+    var foot = settingsArea ? settingsArea.parentElement : null
+    if (!foot) return null
+    var row = foot.querySelector('[data-dsh-footer-status-row]')
+    if (row) return row
+    row = document.createElement('div')
+    row.className = 'dsh-footer-status-row'
+    row.setAttribute('data-dsh-footer-status-row', '1')
+    foot.insertBefore(row, settingsArea)
+    return row
+  }
+
+  function ensureOverviewChip() {
+    if (overviewChip && overviewChip.isConnected) return overviewChip
+    var row = footerRow()
+    if (!row) return null
+    var chip = document.createElement('button')
+    chip.type = 'button'
+    chip.className = 'dsh-balance-chip'
+    chip.setAttribute('data-dsh-balance-overview', '1')
+    chip.setAttribute('aria-haspopup', 'dialog')
+    chip.setAttribute('aria-controls', 'dsh-balance-panel')
+    chip.setAttribute('aria-expanded', 'false')
+    chip.innerHTML = [
+      '<span class="dsh-balance-dot"></span>',
+      '<span class="dsh-balance-chip-label"></span>',
+      '<span class="dsh-balance-chip-amount"></span>',
+      '<span class="dsh-balance-remain"></span>',
     ].join('')
-    card.addEventListener('click', function () { togglePinned() })
-    card.addEventListener('keydown', function (event) {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault()
-        togglePinned()
-      }
-    })
+    // A <button> turns Enter/Space into a click itself; adding keydown here
+    // would toggle twice.
+    chip.addEventListener('click', function () { togglePinned() })
+    // The chip sits on the way to Settings, so hover waits longer than the old
+    // floating card did; a pointer passing through never opens a 400px panel.
     if (canHover()) {
-      card.addEventListener('pointerenter', scheduleHoverOpen)
-      card.addEventListener('pointerleave', scheduleHoverClose)
+      chip.addEventListener('pointerenter', scheduleHoverOpen)
+      chip.addEventListener('pointerleave', scheduleHoverClose)
     }
-    document.body.appendChild(card)
-    overviewPill = card
-    return card
+    // Prepend so the balance reading stays left of another plugin's chip
+    // (the status chip right-aligns itself with an auto margin).
+    row.insertBefore(chip, row.firstChild)
+    overviewChip = chip
+    return chip
   }
 
   function ensureOverviewPanel() {
     if (overviewPanel && overviewPanel.isConnected) return overviewPanel
     var panel = document.createElement('div')
     panel.className = 'dsh-balance-panel'
+    panel.setAttribute('id', 'dsh-balance-panel')
+    panel.setAttribute('tabindex', '-1')
     panel.setAttribute('data-dsh-balance-panel', '1')
     panel.setAttribute('role', 'dialog')
     panel.setAttribute('aria-hidden', 'true')
@@ -358,10 +426,12 @@
     panel.innerHTML = [
       '<div class="dsh-balance-panel-head">',
       '  <span class="dsh-balance-panel-title">' + walletIcon() + '<span class="dsh-balance-panel-title-text"></span></span>',
-      '  <span class="dsh-balance-panel-total"></span>',
+      '  <span class="dsh-balance-panel-updated"></span>',
+      '  <button class="dsh-balance-panel-close" type="button">×</button>',
       '</div>',
-      '<div class="dsh-balance-panel-subhead">',
+      '<div class="dsh-balance-panel-summary">',
       '  <span class="dsh-balance-dot"></span>',
+      '  <span class="dsh-balance-panel-total"></span>',
       '  <span class="dsh-balance-window"></span>',
       '  <span class="dsh-balance-remain"></span>',
       '</div>',
@@ -372,7 +442,7 @@
       '<div class="dsh-balance-panel-rule"></div>',
       '<dl class="dsh-balance-panel-grid dsh-balance-panel-meta"></dl>',
       '<div class="dsh-balance-panel-foot">',
-      '  <span class="dsh-balance-panel-updated"></span>',
+      '  <a class="dsh-balance-panel-link" target="_blank" rel="noreferrer noopener"></a>',
       '  <button class="dsh-balance-panel-refresh" type="button">⟳</button>',
       '</div>',
       '<p class="dsh-balance-panel-note"></p>',
@@ -380,19 +450,26 @@
     panel.__dshRefs = {
       title: panel.querySelector('.dsh-balance-panel-title-text'),
       total: panel.querySelector('.dsh-balance-panel-total'),
-      dot: panel.querySelector('.dsh-balance-panel-subhead .dsh-balance-dot'),
-      window: panel.querySelector('.dsh-balance-panel-subhead .dsh-balance-window'),
-      remain: panel.querySelector('.dsh-balance-panel-subhead .dsh-balance-remain'),
+      dot: panel.querySelector('.dsh-balance-panel-summary .dsh-balance-dot'),
+      window: panel.querySelector('.dsh-balance-panel-summary .dsh-balance-window'),
+      remain: panel.querySelector('.dsh-balance-panel-summary .dsh-balance-remain'),
       balances: panel.querySelector('.dsh-balance-panel-balances'),
       time: panel.querySelector('.dsh-balance-panel-time'),
       meta: panel.querySelector('.dsh-balance-panel-meta'),
       updated: panel.querySelector('.dsh-balance-panel-updated'),
+      close: panel.querySelector('.dsh-balance-panel-close'),
+      link: panel.querySelector('.dsh-balance-panel-link'),
       note: panel.querySelector('.dsh-balance-panel-note'),
       refresh: panel.querySelector('.dsh-balance-panel-refresh'),
     }
     panel.__dshRefs.refresh.addEventListener('click', function (event) {
       event.stopPropagation()
       fetchData(true)
+    })
+    panel.__dshRefs.close.addEventListener('click', function (event) {
+      event.stopPropagation()
+      setPanelOpen(false)
+      if (overviewChip && overviewChip.isConnected) overviewChip.focus()
     })
     if (canHover()) {
       panel.addEventListener('pointerenter', cancelHoverClose)
@@ -404,16 +481,28 @@
   }
 
   function setPanelOpen(open) {
-    var card = ensureOverviewPill()
+    var chip = ensureOverviewChip()
     var panel = ensureOverviewPanel()
     clearHoverTimers()
+    if (!chip) {
+      // Without the sidebar footer (rail, drawer closed) there is nothing to
+      // anchor to, so the panel stays closed.
+      panelOpen = false
+      panelPinned = false
+      panel.hidden = true
+      return
+    }
     panelOpen = open
-    card.setAttribute('aria-expanded', open ? 'true' : 'false')
+    chip.setAttribute('aria-expanded', open ? 'true' : 'false')
     if (!open) {
+      // A panel that owned focus hands it back to the chip instead of letting
+      // the focus vanish with the hidden dialog.
+      var hadFocus = panel.contains(document.activeElement)
       panelPinned = false
       panel.hidden = true
       panel.setAttribute('aria-hidden', 'true')
       panel.style.visibility = ''
+      if (hadFocus && overviewChip && overviewChip.isConnected) overviewChip.focus()
       updateOverview()
       return
     }
@@ -427,107 +516,20 @@
     panel.style.visibility = 'visible'
   }
 
-  // The composer card and its status row (built-in stats, the token-saver
-  // strip, other plugins' readings) are separate boxes; the row may also be a
-  // `display:contents` slot whose own rect is empty. Return the real boxes so
-  // the card can stay clear of whichever one reaches the bottom-right corner.
-  function composerChromeRects() {
-    var rects = []
-    var input = document.querySelector('[data-composer-input]')
-    var composer = input ? input.closest('[data-composer-card]') : null
-    if (!composer && input) composer = input
-    if (!composer) composer = document.querySelector('[data-composer-card]')
-    if (composer) {
-      var composerRect = composer.getBoundingClientRect()
-      if (composerRect.width > 0) rects.push(composerRect)
-    }
-    var dock = document.querySelector('[data-slot="conversation.composer.dock"]')
-    if (dock) {
-      var dockRect = dock.getBoundingClientRect()
-      if (dockRect.width > 0) rects.push(dockRect)
-      for (var i = 0; i < dock.children.length; i += 1) {
-        var childRect = dock.children[i].getBoundingClientRect()
-        if (childRect.width > 0) rects.push(childRect)
-      }
-    }
-    return rects
-  }
-
-  function positionOverview() {
-    var card = overviewPill
-    if (!card || !card.isConnected) return
-    card.style.width = CARD_WIDTH + 'px'
-
-    // The card is a window-level status box, not part of the composer: it
-    // hugs the bottom-right corner of the viewport. It only moves when the
-    // composer or its per-conversation status row actually occupies that
-    // corner — then it sits just above the whole chrome strip, so it never
-    // covers another plugin's reading. In the hero state the composer is
-    // vertically centered, so the card stays at the bottom of the window
-    // instead of following the input.
-    var right = CARD_EDGE
-    var bottom = CARD_EDGE
-    var cardLeft = window.innerWidth - right - CARD_WIDTH
-    var cardRight = window.innerWidth - right
-    var cardHeight = card.offsetHeight || 0
-
-    var rects = composerChromeRects()
-    for (var i = 0; i < rects.length; i += 1) {
-      var rect = rects[i]
-      var cardTop = window.innerHeight - bottom - cardHeight
-      var overlapsHorizontally = rect.right + CARD_GAP > cardLeft && rect.left - CARD_GAP < cardRight
-      var overlapsVertically = rect.bottom + CARD_GAP > cardTop && rect.top - CARD_GAP < window.innerHeight - bottom
-      if (overlapsHorizontally && overlapsVertically) {
-        bottom = Math.max(bottom, window.innerHeight - rect.top + CARD_GAP)
-      }
-    }
-
-    card.style.left = 'auto'
-    card.style.right = right + 'px'
-    card.style.bottom = bottom + 'px'
-  }
-
-  /**
-   * The other bottom-right cards (notably the status plugin) are separate
-   * fixed elements with their own z-index. A detail panel that opens above
-   * the balance card but behind the status card loses its footer and refresh
-   * button. Lift the panel above every sibling card that overlaps the panel's
-   * column, so it opens outside the stack rather than under it.
-   */
-  function panelCeiling(anchor, left, width) {
-    var ceiling = anchor.top - PANEL_GAP
-    var right = left + width
-    var siblings = document.querySelectorAll('.dsh-status-card, .dsh-status-panel')
-    for (var i = 0; i < siblings.length; i += 1) {
-      var node = siblings[i]
-      if (node === overviewPanel || node.hidden) continue
-      var computed = window.getComputedStyle(node)
-      if (computed.display === 'none' || computed.visibility === 'hidden') continue
-      var rect = node.getBoundingClientRect()
-      if (rect.width <= 0 || rect.height <= 0) continue
-      if (rect.top >= anchor.top) continue
-      if (rect.right + PANEL_GAP <= left || rect.left - PANEL_GAP >= right) continue
-      ceiling = Math.min(ceiling, rect.top - PANEL_GAP)
-    }
-    return ceiling
-  }
-
+  // The detail panel opens upward from the chip and clamps to the viewport. The
+  // chip lives in the sidebar footer, so the panel never has to dodge the
+  // conversation composer or the right-hand file panel: it appears over the
+  // bottom-left corner only while it is open.
   function positionPanel() {
-    var card = overviewPill
     var panel = overviewPanel
-    if (!card || !panel || panel.hidden || !panel.isConnected) return
-    var anchor = card.getBoundingClientRect()
+    if (!overviewChip || !overviewChip.isConnected || !panel || panel.hidden || !panel.isConnected) return
+    var anchor = overviewChip.getBoundingClientRect()
     var width = panel.offsetWidth
     var height = panel.offsetHeight
     var vw = window.innerWidth
     var vh = window.innerHeight
-    // Right edges line up with the card, then clamp to the viewport so the
-    // panel never leaves the screen when the card was lifted off the corner.
-    var left = Math.min(
-      Math.max(PANEL_MARGIN, anchor.right - width),
-      Math.max(PANEL_MARGIN, vw - width - PANEL_MARGIN),
-    )
-    var top = panelCeiling(anchor, left, width) - height
+    var left = Math.max(PANEL_MARGIN, Math.min(anchor.left, vw - width - PANEL_MARGIN))
+    var top = anchor.top - PANEL_GAP - height
     if (top < PANEL_MARGIN) top = Math.min(anchor.bottom + PANEL_GAP, vh - height - PANEL_MARGIN)
     panel.style.left = Math.round(left) + 'px'
     panel.style.top = Math.round(Math.max(PANEL_MARGIN, top)) + 'px'
@@ -641,61 +643,81 @@
     if (r.refresh.title !== hint) r.refresh.title = hint
     if (r.refresh.getAttribute('aria-label') !== hint) r.refresh.setAttribute('aria-label', hint)
     r.refresh.setAttribute('data-spin', state.loading ? 'true' : 'false')
+    // Same foot layout as the status panel: official source on the left, the
+    // refresh action on the right.
+    var linkLabel = t('官方定价页 ↗', 'Official pricing ↗')
+    if (r.link.textContent !== linkLabel) r.link.textContent = linkLabel
+    var linkHref = pricing && pricing.currency === 'USD' ? PRICING_USD_URL : PRICING_CNY_URL
+    if (r.link.getAttribute('href') !== linkHref) r.link.setAttribute('href', linkHref)
+    var closeLabel = t('关闭', 'Close')
+    if (r.close.getAttribute('aria-label') !== closeLabel) r.close.setAttribute('aria-label', closeLabel)
     var panelLabel = t('余额详情', 'Balance details')
     if (panel.getAttribute('aria-label') !== panelLabel) panel.setAttribute('aria-label', panelLabel)
   }
 
   function updateOverview() {
-    var el = ensureOverviewPill()
+    var chip = ensureOverviewChip()
+    if (!chip) {
+      // The sidebar footer is gone (drawer closed, frame rebuilt): the anchor
+      // no longer exists, so drop the panel instead of leaving it floating.
+      if (panelOpen) {
+        var focused = overviewPanel && overviewPanel.contains(document.activeElement)
+        panelOpen = false
+        panelPinned = false
+        if (overviewPanel) {
+          overviewPanel.hidden = true
+          overviewPanel.setAttribute('aria-hidden', 'true')
+        }
+        if (focused && overviewChip && overviewChip.isConnected) overviewChip.focus()
+      }
+      return
+    }
     var balance = balanceInfo()
     var peak = peakInfoClient()
-    setText(el.querySelector('.dsh-balance-label'), t('余额', 'Balance'))
+    setText(chip.querySelector('.dsh-balance-chip-label'), t('余额', 'Balance'))
+    setText(chip.querySelector('.dsh-balance-chip-amount'), balance.text)
 
-    var amountEl = el.querySelector('.dsh-balance-amount')
-    if (amountEl) {
-      amountEl.textContent = ''
-      if (balance.ok && balance.balances.length) {
-        for (var i = 0; i < balance.balances.length; i += 1) {
-          var line = document.createElement('span')
-          line.className = 'dsh-balance-amount-line'
-          line.textContent = money(balance.balances[i].total, balance.balances[i].currency)
-          amountEl.appendChild(line)
-        }
-      } else {
-        var fallback = document.createElement('span')
-        fallback.className = 'dsh-balance-amount-line'
-        fallback.textContent = balance.text
-        amountEl.appendChild(fallback)
-      }
-    }
-
-    var dot = el.querySelector('.dsh-balance-dot')
-    var windowEl = el.querySelector('.dsh-balance-window')
-    var remain = el.querySelector('.dsh-balance-remain')
-    var next = el.querySelector('.dsh-balance-next')
+    // The dot colour already says valley (green) or peak (amber); the chip
+    // spends the remaining width on the countdown to the next switch. The
+    // window word and the long countdown stay in the panel's summary line.
+    var dot = chip.querySelector('.dsh-balance-dot')
+    var remainEl = chip.querySelector('.dsh-balance-remain')
     if (peak) {
       if (dot) dot.className = 'dsh-balance-dot' + (peak.peak.isPeak ? ' peak' : '')
-      setText(windowEl, peak.windowLabel)
-      setText(remain, peak.nextAt ? t('剩 ', 'left ') + formatRemaining(peak.remainMs) : '')
-      setText(next, peak.nextAt
-        ? peak.localNext + ' ' + peak.nextLabel + ' · ' + (zoneName(peak.nextAt, peak.zone) || peak.zone)
-        : t('下一个切换点未知', 'Next switch unknown'))
+      setText(remainEl, peak.nextAt ? formatCompactRemaining(peak.remainMs) : '')
     } else {
-      if (dot) dot.className = 'dsh-balance-dot'
-      setText(windowEl, state.error ? t('连接失败', 'Connection failed') : '…')
-      setText(remain, '')
-      setText(next, state.error || '')
+      if (dot) dot.className = 'dsh-balance-dot unknown'
+      setText(remainEl, state.error ? t('连接失败', 'Connection failed') : '…')
     }
 
     updatePanel(balance, peak)
 
-    var hint = panelOpen
-      ? (panelPinned ? t('点击收起', 'Click to collapse') : t('点击固定详情', 'Click to pin details'))
-      : t('悬停查看余额详情 · 点击固定', 'Hover for balance details · click to pin')
-    if (el.title !== hint) el.title = hint
-    if (el.getAttribute('aria-label') !== hint) el.setAttribute('aria-label', hint)
-    el.setAttribute('aria-expanded', panelOpen ? 'true' : 'false')
-    positionOverview()
+    var hint = t('余额 ', 'Balance ') + balance.text
+    if (peak) {
+      hint += ' · ' + peak.windowLabel
+      if (peak.nextAt) hint += ' ' + t('剩 ', 'left ') + formatRemaining(peak.remainMs)
+      if (peak.nextAt) hint += ' · ' + peak.localNext + ' ' + peak.nextLabel
+    } else if (state.error) {
+      hint += ' · ' + state.error
+    }
+    hint += t('（悬停或点击查看详情）', ' (hover or click for details)')
+    // No `title`: the chip opens its panel on hover, and a native tooltip would
+    // pop up on top of it.
+    if (chip.getAttribute('aria-label') !== hint) chip.setAttribute('aria-label', hint)
+    chip.setAttribute('aria-expanded', panelOpen ? 'true' : 'false')
+    // The rail hides the chip through CSS; a panel anchored to a box that no
+    // longer has one would jump to the corner, so close it with the chip.
+    if (panelOpen && chip.getClientRects().length === 0) {
+      var chipHadFocus = overviewPanel && overviewPanel.contains(document.activeElement)
+      panelOpen = false
+      panelPinned = false
+      if (overviewPanel) {
+        overviewPanel.hidden = true
+        overviewPanel.setAttribute('aria-hidden', 'true')
+      }
+      if (chipHadFocus) chip.focus()
+      return
+    }
     if (panelOpen) positionPanel()
   }
 
@@ -838,15 +860,14 @@
   document.addEventListener('pointerdown', function (event) {
     if (!panelOpen) return
     var panel = overviewPanel
-    var card = overviewPill
-    if (!panel || !card) return
-    if (panel.contains(event.target) || card.contains(event.target)) return
+    if (!panel || !overviewChip) return
+    if (panel.contains(event.target) || overviewChip.contains(event.target)) return
     setPanelOpen(false)
   }, true)
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape' || !panelOpen) return
     setPanelOpen(false)
-    if (overviewPill) overviewPill.focus()
+    if (overviewChip) overviewChip.focus()
   })
 
   window.addEventListener(PANEL_EVENT, function (event) {
@@ -854,10 +875,14 @@
     if (panelOpen) setPanelOpen(false)
   })
   var observer = new MutationObserver(schedulePaint)
-  observer.observe(document.documentElement, { childList: true, subtree: true })
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-sidebar-collapsed'],
+  })
   window.addEventListener('focus', function () { fetchData(false) })
   window.addEventListener('resize', function () {
-    positionOverview()
     if (panelOpen) positionPanel()
   })
   setInterval(function () { fetchData(false) }, POLL_MS)

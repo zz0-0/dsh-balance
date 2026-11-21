@@ -4,20 +4,31 @@
 
 A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) web
 plugin that shows your **real DeepSeek account balance** and the **current
-peak/off-peak pricing window** in a window-anchored card, and estimates the
-**cost of every conversation and workspace** from the session log.
+peak/off-peak pricing window** as one compact reading in the sidebar footer,
+and estimates the **cost of every conversation and workspace** from the session
+log. The reading sits on one 26 px line above Settings inside the sidebar, in
+the page's own layout, so it never covers the conversation, the composer, or a
+file open in the right panel.
 
-![Balance card and detail panel](screenshot.png)
+![Detail panel](screenshot.png)
+
+*Screenshot: the detail panel. The chip it opens from now lives in the sidebar
+footer; the capture predates that move.*
 
 ## Features
 
-- **Balance card** — fixed to the bottom-right of the window, independent of the
-  composer: live account balance, current window (`谷价` / `高峰`), remaining
-  time, and the next switch in your local timezone. It stays at the window
-  bottom even on the no-conversation/hero screen, and moves above the composer
-  or the per-conversation status row when they reach that corner, so it never
-  covers other readings.
-- **Native detail panel** — hover the card to open a menu-style panel above it (click to pin it; hover away, click outside, or press `Esc` to close): account balance / topped-up / granted, next switch in local and Beijing time, current local/Beijing time, peak hours, price-table source and update time, ledger path, and a refresh button. The panel automatically clears the status card and any other bottom-right sibling, so it opens above the whole stack instead of behind it. The granted row is always shown (`0` when empty) and links to the Billing page for its expiry while some granted credit remains.
+- **Sidebar-footer reading** — one chip above Settings, left of the
+  service-status chip: live account balance and the countdown to the next
+  pricing switch, in a single 22 px line that follows the sidebar's own type
+  (inherited family, the theme's secondary content size). The dot colour says
+  which window is running — green for `谷价`, amber for `高峰` — so the chip
+  spends its width on the time instead of the word. It adds one 26 px line
+  directly above the Settings trigger (below the footer's own action row, so the
+  session list scrolls a little more) instead of floating over the content, and
+  it is visible on the hero screen and in every session. In the 56 px rail the
+  whole line hides. On windows narrower than 768 px the sidebar is a drawer, so
+  the reading is visible while that drawer is open.
+- **Native detail panel** — hover or click the chip to open a menu-style panel above the footer (click pins it; the `×`, hover away, click outside, or `Esc` closes): a summary line with the dot, balance, window and countdown; then account balance / topped-up / granted, next switch in local and Beijing time, current local/Beijing time, peak hours, price-table source and update time, ledger path, and a foot with a link to the official pricing page plus a refresh button. The granted row is always shown (`0` when empty) and links to the Billing page for its expiry while some granted credit remains.
 - **Cost estimates** — per-conversation and per-workspace estimates in the
   sidebar, summed from a persistent ledger that records each usage event once.
 - **Dynamic pricing** — CNY and USD price tables and the peak-hour windows are
@@ -79,11 +90,14 @@ systemctl --user restart dsh-web
 
 ## Usage
 
-Hover the balance card in the bottom-right corner to open the detail panel;
-click it to pin the panel open. The card itself shows the total balance, the
-current pricing window, the countdown to the next switch, and that switch time
-in your local zone. The panel is placed above the status card and any other
-bottom-right sibling, never underneath them.
+The balance reading is the left chip in the sidebar footer, just above
+Settings: `● 余额 ¥471.62 · 5h59m` — the status dot, the amount, and the
+countdown to the next switch; the dot's colour is the current window. Its text starts on the Settings trigger's column; the list rows
+above sit deeper only because of their nesting indent. Hover it to open the detail panel, click to pin it open. The
+panel opens upward from the chip over the bottom-left corner, so it never
+touches the right-hand file panel; close it and the corner is back. Its summary
+line spells the window out (`谷价` / `高峰`) with the long countdown, and its
+foot links to the official pricing page.
 
 The sidebar shows an `≈¥…` estimate on each conversation row and the sum of its
 conversations on each workspace row. Hovering a badge shows its tokens and the
@@ -99,86 +113,7 @@ browser cannot receive notifications.
 
 ## Pricing and the ledger
 
-### Pricing is fetched, not hardcoded
-
-At startup and whenever the cached table is older than six hours, the host
-fetches both official pricing pages:
-
-| Currency | Page |
-|---|---|
-| CNY | `https://api-docs.deepseek.com/zh-cn/quick_start/pricing` |
-| USD | `https://api-docs.deepseek.com/quick_start/pricing` |
-
-The parser reads the model pricing table dynamically, including the model
-columns, cache-hit/cache-miss/output prices, and the peak-hour windows from the
-Chinese page footnote. If a page changes shape and parsing fails, the previous
-cache is kept and the detail panel marks the source as `缓存/默认`
-(`cache/default`).
-
-### Peak windows
-
-Peak is Beijing weekday **09:00–12:00** and **14:00–18:00**. Weekends are
-always off-peak (from 2026-08-23), and a weekday marked as a public holiday is
-off-peak. A make-up weekend is still a weekend, so it is off-peak.
-
-The holiday calendar is **opt-in**. Without `DSH_BALANCE_HOLIDAYS=1` the plugin
-makes no third-party request: weekends are valley, weekdays are peak, and no
-holiday adjustment is applied. With the flag it fetches:
-
-```
-https://api.apihubs.cn/holiday/get?year=YYYY&size=500
-```
-
-for the current and next year, and caches the result for 30 days.
-
-### The ledger never reprices old spend
-
-The cost ledger is `~/.dsh/.dsh-balance-costs.json`. Each session entry stores:
-
-- `costs.CNY` and `costs.USD`
-- `tokens`
-- `lastSeq` — the last event already recorded
-- `pricingVersions` — price snapshots used for its recorded events
-- `calendarVersions` — holiday calendars used for its recorded events
-
-When a session is scanned again, only events with `seq > lastSeq` are priced.
-Already-recorded events are never recalculated, so a price change affects only
-**new** events and a restart cannot rewrite what was already spent.
-
-### Currency
-
-`/user/balance` can return multiple `balance_infos`. The plugin stores costs in
-both CNY and USD, then displays the bucket for the primary account currency: the
-**largest non-zero balance** returned by the API (CNY wins a tie). If both
-currencies have a positive balance, the card shows both stacked while estimates
-use the larger one. A USD-only account uses the USD pricing table and `$`
-badges.
-
-**Granted credit expiry.** The official balance API reports only the unexpired
-granted total, not per-grant expiry dates. The panel therefore keeps the granted
-row visible at zero and links it to the DeepSeek Billing page
-(`https://platform.deepseek.com/transactions`) while a granted balance exists.
-
-## How it works
-
-The plugin is a DSH bundle: `package.json` declares
-`dsh.bundle.patch = ./cordis.patch.yml`, and that patch inserts the
-`dsh-balance` entry into the web profile. It has two halves:
-
-| Half | File | Role |
-|---|---|---|
-| Host | `lib/index.js` | Resolves `DEEPSEEK_API_KEY` through DSH credentials, queries `/user/balance`, reads session events, keeps the ledger, fetches prices/holidays, serves `GET /dsh-balance/data` and `GET /dsh-balance/client.js`. |
-| Browser | `client.js` | Injected into the DSH index page. Draws the balance card and detail panel, and adds cost badges to conversation/workspace rows. |
-
-The browser only talks to the local DSH server. The API key never reaches the
-browser.
-
-Cache files, all under `~/.dsh/` (or `$DSH_HOME`):
-
-- `.dsh-balance-costs.json` — the cost ledger
-- `.dsh-balance-pricing.json` — current price table and peak hours
-- `.dsh-balance-pricing-history.json` — one entry per changed price snapshot
-- `.dsh-balance-holidays.json` — holiday calendar (only with the opt-in flag)
+Pricing fetch, peak windows, the append-only ledger, currency handling, and the two halves: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Privacy
 
@@ -192,7 +127,7 @@ Cache files, all under `~/.dsh/` (or `$DSH_HOME`):
 
 ## Troubleshooting
 
-- **Card shows `余额?` / `Balance?`** — `DEEPSEEK_API_KEY` is missing or invalid;
+- **Chip shows `余额?` / `Balance?`** — `DEEPSEEK_API_KEY` is missing or invalid;
   check DSH's credentials configuration and the host log.
 - **Price source says `缓存/默认`** — the pricing page could not be fetched or
   parsed; the last cached table is still used.
@@ -228,18 +163,21 @@ systemctl --user restart dsh-web
 | `package.json` | DSH bundle metadata and compatibility |
 | `cordis.patch.yml` | Inserts the plugin into the web profile |
 | `lib/index.js` | Host: balance, pricing, holidays, ledger, HTTP routes, client injection |
-| `client.js` | Browser: balance card + detail panel, row badges, notifications |
+| `client.js` | Browser: footer chip + detail panel, row badges, notifications |
 | `screenshot.png` | README screenshot |
 
 ### UI integration
 
 The browser side does not patch React. It uses stable attributes exposed by the
-workspace sidebar and composer:
+sidebar shell:
 
 - `[data-row-key="session:<sessionId>"]` and `[data-row-key="workspace:<workspaceId>"]`
   for cost badges (re-added by a `MutationObserver` after React re-renders)
-- `[data-composer-card]` and `[data-slot="conversation.composer.dock"]` to keep
-  the window-anchored card clear of the composer and the status row
+- `[data-slot="sidebar.settings"]` to find the footer column: one 26 px row is
+  inserted directly above the Settings trigger. The footer's own action row
+  already holds the stock Cordis occupant (a 42 px full-width flex item), so a
+  second child there would be squeezed to nothing.
+- `[data-sidebar-collapsed]` on the frame root to hide that row in the rail
 
 ## License
 

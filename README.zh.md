@@ -3,18 +3,24 @@
 [English](README.md) | **简体中文**
 
 一个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）
-Web 插件：在窗口右下角的卡片里显示 **DeepSeek 账户真实余额** 和 **当前峰谷计价
-时段**，并从会话日志估算 **每个会话与工作区的费用**。
+Web 插件：在侧边栏底部的一行读数里显示 **DeepSeek 账户真实余额** 和 **当前峰谷
+计价时段**，并从会话日志估算 **每个会话与工作区的费用**。这行读数在侧栏里设置上方
+单独占一行 24px 的布局高度，所以不会盖住对话、输入框，也不会盖住右栏打开的文件。
 
-![余额卡片与详情面板](screenshot.png)
+![详情面板](screenshot.png)
+
+*截图是详情面板；它现在从侧栏底部的那枚 chip 打开，截图拍于移动之前。*
 
 ## 功能
 
-- **余额卡片** — 固定在窗口右下角，不随输入框移动：实时账户余额、当前时段
-  （`谷价` / `高峰`）、剩余时间，以及按本地时区显示的下次切换时间。在没有会话的
-  欢迎页（hero）也停靠在窗口底部；当输入框或会话状态行到达右下角时，卡片会上移
-  避让，不遮挡其他读数。
-- **原生详情面板** — 悬停卡片，在卡片上方打开与 DSH 菜单同风格的详情面板（点击可固定；移开、点击面板外部或按 `Esc` 关闭）：账户余额 / 充值 / 赠送、按本地时间与北京时间显示的下次切换、当前本地/北京时间、高峰时段、价格表来源与更新时间、账本路径，以及刷新按钮。面板会自动避开状态卡和其他右下角同层卡片，开在整叠卡片上方，不会被它们盖住。赠送余额行始终显示（为 0 时显示 ¥0.00），仅在仍有赠金时附带账单页的有效期链接。
+- **侧栏底部读数** — 设置上方一枚紧凑的 chip，排在服务状态 chip 左边：实时账户
+  余额和距下次切换的倒计时，一行 22px 内放下，字体跟侧栏一致（继承字体族，字号用
+  主题的 secondary content size）。点的颜色就代表当前时段（绿=谷价、琥珀=高峰），
+  所以 chip 把宽度留给时间而不是文字。它在设置上方单独加一行（约 26px，位于 footer
+  自己的 action 行之下，会话列表因此少滚一小段），而不是浮在内容上面；欢迎页和每个
+  会话里都在。侧栏收成 56px rail 时整行隐藏；窗口窄于 768px 时侧栏变成抽屉，抽屉
+  打开时才能看到。
+- **原生详情面板** — 悬停或点击 chip，在 footer 上方打开与 DSH 菜单同风格的详情面板（点击可固定；移开、点击面板外部或按 `Esc` 关闭）：账户余额 / 充值 / 赠送、按本地时间与北京时间显示的下次切换、当前本地/北京时间、高峰时段、价格表来源与更新时间、账本路径，以及刷新按钮。赠送余额行始终显示（为 0 时显示 ¥0.00），仅在仍有赠金时附带账单页的有效期链接。
 - **费用估算** — 侧边栏中每个会话、每个工作区的估算费用，来自一份每条用量事件只
   记录一次、不会重新计价的持久账本。
 - **动态价格** — CNY/USD 价格表与高峰时段从 DeepSeek 官方定价页抓取。节假日日历
@@ -71,9 +77,11 @@ systemctl --user restart dsh-web
 
 ## 使用
 
-悬停右下角的余额卡片打开详情面板，点击卡片可把面板固定住。卡片本身显示总余额、
-当前计价时段、距下次切换的倒计时，以及本地时区的切换时间。面板开在状态卡和其他
-右下角同层卡片上方，不会被它们盖住。
+余额读数是侧栏底部、设置上方那行里左起的一枚 chip：`● 余额 ¥471.62 · 5h59m` ——
+状态点、金额和距下次切换的倒计时，点的颜色就是当前时段；文字和设置行同一列（上面的
+列表行更靠右是层级缩进）。悬停打开详情面板，点击可固定；面板从 chip 向上展开、盖住
+左下角，不会碰到右栏的文件，关掉就把角落还回来。面板的摘要行会把时段写成
+`谷价` / `高峰` 并给出完整倒计时，底部有到官方定价页的链接。
 
 侧边栏的每个会话行显示 `≈¥…` 估算，每个工作区行显示其下会话的合计。悬停在徽章上
 可以看到 token 用量和记录时的估算。
@@ -86,77 +94,7 @@ systemctl --user restart dsh-web
 
 ## 计价与账本
 
-### 价格是抓取的，不是写死的
-
-启动时，以及缓存超过六小时时，Host 会抓取两个官方定价页：
-
-| 币种 | 页面 |
-|---|---|
-| CNY | `https://api-docs.deepseek.com/zh-cn/quick_start/pricing` |
-| USD | `https://api-docs.deepseek.com/quick_start/pricing` |
-
-解析器动态读取模型价格表（模型列、缓存命中/未命中/输出价格），以及中文页脚注里的
-高峰时段。如果页面结构变化导致解析失败，会保留上一次缓存，并在详情面板里把来源
-标记为 `缓存/默认`（`cache/default`）。
-
-### 高峰时段
-
-高峰为北京时间工作日 **09:00–12:00** 和 **14:00–18:00**。周末全时段谷价
-（自 2026-08-23 起）；被标记为法定节假日的工作日按谷价；调休的周末仍然是周末，
-所以也是谷价。
-
-节假日日历是**可选项**。不设置 `DSH_BALANCE_HOLIDAYS=1` 时不发任何第三方请求：
-周末按谷价，工作日按高峰，不做节假日调整。设置后才抓取：
-
-```
-https://api.apihubs.cn/holiday/get?year=YYYY&size=500
-```
-
-抓取当前与下一年，缓存 30 天。
-
-### 账本不会重算历史花费
-
-费用账本位于 `~/.dsh/.dsh-balance-costs.json`。每个会话条目保存：
-
-- `costs.CNY` 与 `costs.USD`
-- `tokens`
-- `lastSeq` — 最后一条已记录的事件
-- `pricingVersions` — 记录其事件时使用的价格快照
-- `calendarVersions` — 记录其事件时使用的节假日日历
-
-再次扫描会话时，只对 `seq > lastSeq` 的事件计价。已经记录的事件永远不会重算，
-因此调价只影响 **新** 事件，重启也不会改写已经花掉的钱。
-
-### 币种
-
-`/user/balance` 可能返回多个 `balance_infos`。插件按 CNY 和 USD 分别记账，然后
-展示主账户币种对应的桶：API 返回的 **最大非零余额**（并列时 CNY 优先）。如果两种
-币都有正余额，卡片会上下显示两个；估算使用较大的那个。只有 USD 的账户使用 USD
-价格表和 `$` 徽章。
-
-**赠金有效期。** 官方余额接口只返回未过期的赠金总额，不提供逐笔赠金及到期日期。
-因此面板始终保留赠送余额行（为 0 时显示 ¥0.00），仅在赠金大于 0 时提供
-「有效期见账单页」链接（`https://platform.deepseek.com/transactions`）。
-
-## 工作原理
-
-本插件是一个 DSH bundle：`package.json` 声明
-`dsh.bundle.patch = ./cordis.patch.yml`，该 patch 把 `dsh-balance` 条目插入 web
-profile。它分为两部分：
-
-| 部分 | 文件 | 作用 |
-|---|---|---|
-| Host | `lib/index.js` | 通过 DSH credentials 解析 `DEEPSEEK_API_KEY`，查询 `/user/balance`，读取会话事件，维护账本，抓取价格与节假日，提供 `GET /dsh-balance/data` 与 `GET /dsh-balance/client.js`。 |
-| Browser | `client.js` | 注入 DSH 首页。绘制余额卡片与详情面板，并给会话/工作区行添加费用徽章。 |
-
-浏览器只与本地 DSH 服务通信，API Key 不会进入浏览器。
-
-缓存文件（位于 `~/.dsh/` 或 `$DSH_HOME`）：
-
-- `.dsh-balance-costs.json` — 费用账本
-- `.dsh-balance-pricing.json` — 当前价格表与高峰时段
-- `.dsh-balance-pricing-history.json` — 每次价格快照变化记录一条
-- `.dsh-balance-holidays.json` — 节假日日历（仅在开启选项时）
+价格抓取、峰谷、只追加账本、币种和 host/browser 两半见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## 隐私
 
@@ -170,7 +108,7 @@ profile。它分为两部分：
 
 ## 常见问题
 
-- **卡片显示 `余额?` / `Balance?`** — `DEEPSEEK_API_KEY` 缺失或无效；检查 DSH
+- **chip 显示 `余额?` / `Balance?`** — `DEEPSEEK_API_KEY` 缺失或无效；检查 DSH
   凭据配置与宿主日志。
 - **价格来源显示 `缓存/默认`** — 定价页抓取或解析失败；仍使用上一次缓存的价格表。
 - **没有通知** — 未给 DSH 站点授予通知权限，或标签页已关闭。
@@ -203,18 +141,20 @@ systemctl --user restart dsh-web
 | `package.json` | DSH bundle 元数据与兼容性声明 |
 | `cordis.patch.yml` | 把插件插入 web profile |
 | `lib/index.js` | Host：余额、价格、节假日、账本、HTTP 路由、客户端注入 |
-| `client.js` | Browser：余额卡片与详情面板、行徽章、通知 |
+| `client.js` | Browser：侧栏底部 chip 与详情面板、行徽章、通知 |
 | `screenshot.png` | README 截图 |
 
 ### UI 集成
 
-浏览器侧不修改 React，只使用侧边栏与输入框暴露的稳定属性：
+浏览器侧不修改 React，只使用侧边栏暴露的稳定属性：
 
 - `[data-row-key="session:<sessionId>"]` 与
   `[data-row-key="workspace:<workspaceId>"]` 用于费用徽章（React 重渲染后由
   `MutationObserver` 重新添加）
-- `[data-composer-card]` 与 `[data-slot="conversation.composer.dock"]` 用于让固定在
-  窗口上的卡片避开输入框和状态行
+- `[data-slot="sidebar.settings"]` 用来定位 footer 那一列：在设置行正上方插一行
+  26px 的读数。footer 自己的 action 行已有 Cordis（42px 满宽）占着，再塞一个 flex
+  子项会被挤成 0
+- 根元素上的 `[data-sidebar-collapsed]` 用来在 rail 状态下藏起整行
 
 ## 许可证
 
