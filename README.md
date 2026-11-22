@@ -10,7 +10,7 @@ log. The reading sits on one 32 px row above Settings inside the sidebar, in
 the page's own layout, so it never covers the conversation, the composer, or a
 file open in the right panel.
 
-![Detail panel](screenshot.png)
+![Detail panel](assets/screenshot.png)
 
 *Screenshot: the detail panel. The chip it opens from now lives in the sidebar
 footer; the capture predates that move.*
@@ -164,7 +164,7 @@ systemctl --user restart dsh-web
 | `cordis.patch.yml` | Inserts the plugin into the web profile |
 | `lib/index.js` | Host: balance, pricing, holidays, ledger, HTTP routes, client injection |
 | `client.js` | Browser: footer chip + detail panel, row badges, notifications |
-| `screenshot.png` | README screenshot |
+| `assets/screenshot.png` | README screenshot |
 
 ### UI integration
 

@@ -7,7 +7,7 @@ Web 插件：在侧边栏底部的一行读数里显示 **DeepSeek 账户真实�
 计价时段**，并从会话日志估算 **每个会话与工作区的费用**。这行读数在侧栏里设置上方
 单独占一行 32px 的布局高度，所以不会盖住对话、输入框，也不会盖住右栏打开的文件。
 
-![详情面板](screenshot.png)
+![详情面板](assets/screenshot.png)
 
 *截图是详情面板；它现在从侧栏底部的那枚 chip 打开，截图拍于移动之前。*
 
@@ -142,7 +142,7 @@ systemctl --user restart dsh-web
 | `cordis.patch.yml` | 把插件插入 web profile |
 | `lib/index.js` | Host：余额、价格、节假日、账本、HTTP 路由、客户端注入 |
 | `client.js` | Browser：侧栏底部 chip 与详情面板、行徽章、通知 |
-| `screenshot.png` | README 截图 |
+| `assets/screenshot.png` | README 截图 |
 
 ### UI 集成
 
