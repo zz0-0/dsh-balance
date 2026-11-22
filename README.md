@@ -28,7 +28,7 @@ footer; the capture predates that move.*
   it is visible on the hero screen and in every session. In the 56 px rail the
   whole line hides. On windows narrower than 768 px the sidebar is a drawer, so
   the reading is visible while that drawer is open.
-- **Native detail panel** — hover or click the chip to open a menu-style panel above the footer (click pins it; the `×`, hover away, click outside, or `Esc` closes): a summary line with the dot, balance, window and countdown; then account balance / topped-up / granted, next switch in local and Beijing time, current local/Beijing time, peak hours, price-table source and update time, ledger path, and a foot with links to the official pricing page and the platform usage page plus a refresh button. The granted row is always shown (`0` when empty) and links to the Billing page for its expiry while some granted credit remains.
+- **Native detail panel** — hover or click the chip to open a menu-style panel above the footer (click pins it; the `×`, hover away, click outside, or `Esc` closes): a summary line with the dot, balance, window and countdown; then account balance / topped-up / granted, next switch in local and Beijing time, current local/Beijing time, peak hours, price-table source and update time, ledger path, and a foot with links to the official pricing page and the [platform usage page](https://platform.deepseek.com/usage) plus a refresh button. The granted row is always shown (`0` when empty) and links to the Billing page for its expiry while some granted credit remains.
 - **Cost estimates** — per-conversation and per-workspace estimates in the
   sidebar, summed from a persistent ledger that records each usage event once.
 - **Dynamic pricing** — CNY and USD price tables and the peak-hour windows are
@@ -97,7 +97,7 @@ above sit deeper only because of their nesting indent. Hover it to open the deta
 panel opens upward from the chip over the bottom-left corner, so it never
 touches the right-hand file panel; close it and the corner is back. Its summary
 line spells the window out (`谷价` / `高峰`) with the long countdown, and its
-foot links to the official pricing page and the platform usage page.
+foot links to the official pricing page and the [platform usage page](https://platform.deepseek.com/usage).
 
 The sidebar shows an `≈¥…` estimate on each conversation row and the sum of its
 conversations on each workspace row. Hovering a badge shows its tokens and the
