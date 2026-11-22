@@ -34,7 +34,7 @@ Bundle：`package.json` 的 `dsh.bundle.patch = ./cordis.patch.yml` 把 `dsh-bal
 - 不在浏览器放 key；浏览器只访问本地 DSH server。
 - 不重算已记花费；价格变化只影响新事件。
 - 没有 `DSH_BALANCE_HOLIDAYS=1` 时不发节假日请求。
-- UI 落点是侧栏 footer 里设置上方单独的一行（22px chip / 26px 行高）。footer 的
+- UI 落点是侧栏 footer 里设置上方单独的一行（32px chip / 32px 行高，和侧栏会话 / 工作区行同高，hover 背景不再是一枚矮 pill）。footer 的
   action 行已被 Cordis 占用（42px 满宽），所以不挤进那一行；chip 不自己定位浮层，
   行高、位置和 rail 收起都交给 shell 布局，只有详情面板用 fixed 定位。
 - 两个读数插件共用同一行：余额在左、服务状态在右，格式都是「状态点 + 标签 + 主值
@@ -44,5 +44,5 @@ Bundle：`package.json` 的 `dsh.bundle.patch = ./cordis.patch.yml` 把 `dsh-bal
 - 左右内边距 7px，让 chip 文字和设置行同一列（20px 起）；列表行因层级缩进更深
   （会话 32px / 工作区名 42px），这是层级本身的效果，footer 不跟随。
 - 详情面板的块序固定为：标题 + 更新时间 + 关闭 → 状态摘要（点 + 主值 + 次值）→
-  分隔线 → 明细网格（可多段）→ 页脚（官方来源链接在左、动作在右）→ 说明文字。
+  分隔线 → 明细网格（可多段）→ 页脚（官方定价页 + 平台用量页在左、动作在右）→ 说明文字。
 - 旧 ai 的 `start` / `closeout` 已退休，不引用。

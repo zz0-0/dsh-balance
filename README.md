@@ -6,7 +6,7 @@ A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) web
 plugin that shows your **real DeepSeek account balance** and the **current
 peak/off-peak pricing window** as one compact reading in the sidebar footer,
 and estimates the **cost of every conversation and workspace** from the session
-log. The reading sits on one 26 px line above Settings inside the sidebar, in
+log. The reading sits on one 32 px row above Settings inside the sidebar, in
 the page's own layout, so it never covers the conversation, the composer, or a
 file open in the right panel.
 
@@ -19,16 +19,16 @@ footer; the capture predates that move.*
 
 - **Sidebar-footer reading** — one chip above Settings, left of the
   service-status chip: live account balance and the countdown to the next
-  pricing switch, in a single 22 px line that follows the sidebar's own type
+  pricing switch, in a single 32 px row that follows the sidebar's own type
   (inherited family, the theme's secondary content size). The dot colour says
   which window is running — green for `谷价`, amber for `高峰` — so the chip
-  spends its width on the time instead of the word. It adds one 26 px line
+  spends its width on the time instead of the word. It adds one 32 px row
   directly above the Settings trigger (below the footer's own action row, so the
   session list scrolls a little more) instead of floating over the content, and
   it is visible on the hero screen and in every session. In the 56 px rail the
   whole line hides. On windows narrower than 768 px the sidebar is a drawer, so
   the reading is visible while that drawer is open.
-- **Native detail panel** — hover or click the chip to open a menu-style panel above the footer (click pins it; the `×`, hover away, click outside, or `Esc` closes): a summary line with the dot, balance, window and countdown; then account balance / topped-up / granted, next switch in local and Beijing time, current local/Beijing time, peak hours, price-table source and update time, ledger path, and a foot with a link to the official pricing page plus a refresh button. The granted row is always shown (`0` when empty) and links to the Billing page for its expiry while some granted credit remains.
+- **Native detail panel** — hover or click the chip to open a menu-style panel above the footer (click pins it; the `×`, hover away, click outside, or `Esc` closes): a summary line with the dot, balance, window and countdown; then account balance / topped-up / granted, next switch in local and Beijing time, current local/Beijing time, peak hours, price-table source and update time, ledger path, and a foot with links to the official pricing page and the platform usage page plus a refresh button. The granted row is always shown (`0` when empty) and links to the Billing page for its expiry while some granted credit remains.
 - **Cost estimates** — per-conversation and per-workspace estimates in the
   sidebar, summed from a persistent ledger that records each usage event once.
 - **Dynamic pricing** — CNY and USD price tables and the peak-hour windows are
@@ -97,7 +97,7 @@ above sit deeper only because of their nesting indent. Hover it to open the deta
 panel opens upward from the chip over the bottom-left corner, so it never
 touches the right-hand file panel; close it and the corner is back. Its summary
 line spells the window out (`谷价` / `高峰`) with the long countdown, and its
-foot links to the official pricing page.
+foot links to the official pricing page and the platform usage page.
 
 The sidebar shows an `≈¥…` estimate on each conversation row and the sum of its
 conversations on each workspace row. Hovering a badge shows its tokens and the
@@ -173,7 +173,7 @@ sidebar shell:
 
 - `[data-row-key="session:<sessionId>"]` and `[data-row-key="workspace:<workspaceId>"]`
   for cost badges (re-added by a `MutationObserver` after React re-renders)
-- `[data-slot="sidebar.settings"]` to find the footer column: one 26 px row is
+- `[data-slot="sidebar.settings"]` to find the footer column: one 32 px row is
   inserted directly above the Settings trigger. The footer's own action row
   already holds the stock Cordis occupant (a 42 px full-width flex item), so a
   second child there would be squeezed to nothing.

@@ -41,8 +41,10 @@
   // Canvas fallback so an older/renamed token cannot make the UI disappear.
   var css = document.createElement('style')
   css.textContent = [
-    // The overview is one text chip on its own 26px line in the sidebar footer,
-    // directly above the Settings trigger. The footer's action row already has
+    // The overview is one text chip on its own 32px line in the sidebar footer,
+    // directly above the Settings trigger. The chip fills that line, so its
+    // hover surface is the same height as a workspace/session row instead of a
+    // short text pill. The footer's action row already has
     // the stock Cordis occupant (a 42px full-width flex item), so a second flex
     // child there would be squeezed to nothing; this line is a sibling of that
     // row inside the footer column instead. Nothing floats over the transcript
@@ -53,12 +55,12 @@
 // inset 3 + its padding 9 = 20px, and ends 12px from the right edge. The chip
 // adds its own 5px inline padding, so the row pads 7px on each side. List rows
 // sit deeper than this by their own nesting indent.
-    '.dsh-footer-status-row{display:flex;flex:none;align-items:center;gap:8px;box-sizing:border-box;width:100%;min-width:0;overflow:hidden;height:26px;padding:0 7px}',
+    '.dsh-footer-status-row{display:flex;flex:none;align-items:center;gap:8px;box-sizing:border-box;width:100%;min-width:0;overflow:hidden;height:32px;padding:0 7px}',
     '[data-sidebar-collapsed] .dsh-footer-status-row{display:none}',
     // Type follows the sidebar: the family is inherited (the button opts back
     // in), and the size rides the theme's secondary content size so it tracks
     // the user's font-size setting instead of pinning 11px.
-    '.dsh-balance-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;overflow:hidden;flex:0 1 auto;height:22px;padding:0 5px;border:0;border-radius:var(--dsw-radius-sm,6px);background:transparent;font-family:inherit;font-size:var(--dsh-content-font-size-secondary,13px);line-height:22px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary,CanvasText);white-space:nowrap;cursor:pointer;transition:background .12s ease}',
+    '.dsh-balance-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;overflow:hidden;flex:0 1 auto;box-sizing:border-box;height:32px;padding:0 5px;border:0;border-radius:var(--dsw-radius-md,8px);background:transparent;font-family:inherit;font-size:var(--dsh-content-font-size-secondary,13px);line-height:32px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary,CanvasText);white-space:nowrap;cursor:pointer;transition:background .12s ease}',
     '@media (hover:hover){.dsh-balance-chip:hover{background:var(--dsw-alias-interactive-bg-hover,color-mix(in srgb,CanvasText 7%,transparent))}}',
     '.dsh-balance-chip[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover,color-mix(in srgb,CanvasText 7%,transparent))}',
     '.dsh-balance-chip-label{color:var(--dsw-alias-label-tertiary,CanvasText)}',
@@ -179,7 +181,7 @@
     }
   }
 
-  // The chip is one 22px line, so it uses a compact countdown ("5h59m"); the
+  // The chip is one compact row, so it uses a compact countdown ("5h59m"); the
   // panel keeps the localized long form.
   function formatCompactRemaining(ms) {
     if (!Number.isFinite(ms) || ms <= 0) return ''
@@ -210,10 +212,12 @@
   var HOVER_OPEN_MS = 400
   var HOVER_CLOSE_MS = 180
   var PANEL_EVENT = 'dsh-dock-panel-open'
-  // The foot link points at the same official pricing page the host fetched
-  // its table from (CNY and USD have separate pages).
+  // The foot links point at the same official pricing page the host fetched
+  // its table from (CNY and USD have separate pages) and at the platform's
+  // own usage page, where the account's token spend is broken down.
   var PRICING_CNY_URL = 'https://api-docs.deepseek.com/zh-cn/quick_start/pricing'
   var PRICING_USD_URL = 'https://api-docs.deepseek.com/quick_start/pricing'
+  var USAGE_URL = 'https://platform.deepseek.com/usage'
 
   function canHover() {
     try {
@@ -442,7 +446,8 @@
       '<div class="dsh-balance-panel-rule"></div>',
       '<dl class="dsh-balance-panel-grid dsh-balance-panel-meta"></dl>',
       '<div class="dsh-balance-panel-foot">',
-      '  <a class="dsh-balance-panel-link" target="_blank" rel="noreferrer noopener"></a>',
+      '  <a class="dsh-balance-panel-link" data-dsh-balance-link="pricing" target="_blank" rel="noreferrer noopener"></a>',
+      '  <a class="dsh-balance-panel-link" data-dsh-balance-link="usage" target="_blank" rel="noreferrer noopener"></a>',
       '  <button class="dsh-balance-panel-refresh" type="button">⟳</button>',
       '</div>',
       '<p class="dsh-balance-panel-note"></p>',
@@ -458,7 +463,8 @@
       meta: panel.querySelector('.dsh-balance-panel-meta'),
       updated: panel.querySelector('.dsh-balance-panel-updated'),
       close: panel.querySelector('.dsh-balance-panel-close'),
-      link: panel.querySelector('.dsh-balance-panel-link'),
+      link: panel.querySelector('[data-dsh-balance-link="pricing"]'),
+      usage: panel.querySelector('[data-dsh-balance-link="usage"]'),
       note: panel.querySelector('.dsh-balance-panel-note'),
       refresh: panel.querySelector('.dsh-balance-panel-refresh'),
     }
@@ -643,12 +649,16 @@
     if (r.refresh.title !== hint) r.refresh.title = hint
     if (r.refresh.getAttribute('aria-label') !== hint) r.refresh.setAttribute('aria-label', hint)
     r.refresh.setAttribute('data-spin', state.loading ? 'true' : 'false')
-    // Same foot layout as the status panel: official source on the left, the
-    // refresh action on the right.
+    // Same foot layout as the status panel: official sources on the left, the
+    // refresh action on the right. The usage link is the account's token spend
+    // page, not the pricing table, so it stays the same for both currencies.
     var linkLabel = t('官方定价页 ↗', 'Official pricing ↗')
     if (r.link.textContent !== linkLabel) r.link.textContent = linkLabel
     var linkHref = pricing && pricing.currency === 'USD' ? PRICING_USD_URL : PRICING_CNY_URL
     if (r.link.getAttribute('href') !== linkHref) r.link.setAttribute('href', linkHref)
+    var usageLabel = t('用量页 ↗', 'Usage ↗')
+    if (r.usage.textContent !== usageLabel) r.usage.textContent = usageLabel
+    if (r.usage.getAttribute('href') !== USAGE_URL) r.usage.setAttribute('href', USAGE_URL)
     var closeLabel = t('关闭', 'Close')
     if (r.close.getAttribute('aria-label') !== closeLabel) r.close.setAttribute('aria-label', closeLabel)
     var panelLabel = t('余额详情', 'Balance details')
