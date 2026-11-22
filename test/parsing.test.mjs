@@ -57,3 +57,8 @@ test('parses a peak window that crosses midnight', () => {
   const ranges = parsePeakHours('<p>北京时间 22:00-02:00 为高峰时段</p>')
   assert.deepEqual(ranges, [[22, 26]])
 })
+
+test('keeps a peak window ending at 24:00 as a same-day window', () => {
+  const ranges = parsePeakHours('<p>北京时间 22:00-24:00 为高峰时段</p>')
+  assert.deepEqual(ranges, [[22, 24]])
+})

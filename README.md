@@ -179,12 +179,6 @@ sidebar shell:
   second child there would be squeezed to nothing.
 - `[data-sidebar-collapsed]` on the frame root to hide that row in the rail
 
-## Docs
-
-| 文档 | 回答什么 |
-|---|---|
-| [docs/reviews/2026-11-15-cross-midnight.md](docs/reviews/2026-11-15-cross-midnight.md) | 跨午夜那次 review 的发现与结论 |
-
 ## License
 
 [MIT](LICENSE)
