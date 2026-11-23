@@ -13,10 +13,15 @@
 
 ## 块
 
-| Half | File | Role |
+| 块 | 文件 | 做什么 |
 |---|---|---|
 | Host | `lib/index.js` | 解析 `DEEPSEEK_API_KEY`、查 `/user/balance`、读会话事件、维护账本、抓价格 / 节假日、提供 `GET /dsh-balance/data` 和 `GET /dsh-balance/client.js` |
 | Browser | `client.js` | 注入 DSH 首页：侧栏 footer 的余额 chip、详情面板、会话 / 工作区成本徽章 |
+| 载体 | `AGENTS.md`、`ARCHITECTURE.md`、`README.md`、`README.zh.md`、`LICENSE` | 人读入口与架构卡片 |
+| 构建 | `package.json`、`cordis.patch.yml` | 包声明 / bundle patch |
+| 资产 | `assets/` | README 截图 |
+| 测试 | `test/` | host / client 测试 |
+| 文档 | `docs/` | 架构视图 / 文档 |
 
 Bundle：`package.json` 的 `dsh.bundle.patch = ./cordis.patch.yml` 把 `dsh-balance` 插进 web profile。
 

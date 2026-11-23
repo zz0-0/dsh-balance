@@ -14,3 +14,6 @@ AI_ROOT="${AI_ROOT:-$HOME/Project/ai}"
 if [ -x "$AI_ROOT/checks/check-project" ]; then
     "$AI_ROOT/checks/check-project" "$PWD"
 fi
+if [ -x "$AI_ROOT/checks/check-arch" ]; then
+    "$AI_ROOT/checks/check-arch" "$PWD"
+fi
