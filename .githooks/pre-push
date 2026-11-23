@@ -8,3 +8,9 @@ if ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 npm test
+
+# ai 的文档契约是 dev 侧的事：钩子不进发布包（`files` 不含 .githooks），插件运行时仍自足。
+AI_ROOT="${AI_ROOT:-$HOME/Project/ai}"
+if [ -x "$AI_ROOT/checks/check-project" ]; then
+    "$AI_ROOT/checks/check-project" "$PWD"
+fi

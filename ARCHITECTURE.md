@@ -29,6 +29,13 @@ Bundle：`package.json` 的 `dsh.bundle.patch = ./cordis.patch.yml` 把 `dsh-bal
 - `.dsh-balance-pricing-history.json` — 每次价格变化的快照
 - `.dsh-balance-holidays.json` — 节假日日历（只在 opt-in 时）
 
+## 接口
+
+- Host → 浏览器：`GET /dsh-balance/data`（余额 / 峰谷 / 成本摘要）、`GET /dsh-balance/client.js`（注入脚本）。
+- 注入：`ctx.webServer.tapIndex` 把 `client.js` 插进首页；UI 落点是侧栏 footer 设置上方那一行。
+- 环境：`DEEPSEEK_API_KEY`（host 读）、`DSH_BALANCE_HOLIDAYS=1`（才抓节假日）。
+- 账本：`~/.dsh/.dsh-balance-costs.json` 只追加；只对 `lastSeq` 之后的事件计费。
+
 ## 边界
 
 - 不在浏览器放 key；浏览器只访问本地 DSH server。
